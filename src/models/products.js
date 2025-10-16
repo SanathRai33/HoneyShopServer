@@ -63,13 +63,6 @@ const productSchema = new mongoose.Schema(
         one: { type: Number, default: 0 },
       },
     },
-    reviews: [{
-      user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-      rating: { type: Number, required: true, min: 1, max: 5 },
-      comment: { type: String },
-      images: [{ type: String }],
-      createdAt: { type: Date, default: Date.now },
-    }],
     tags: [String],
     isActive: {
       type: Boolean,
@@ -88,6 +81,14 @@ const productSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+productSchema.virtual('reviews', {
+  ref: 'Review',
+  localField: '_id',
+  foreignField: 'product'
+});
+
+productSchema.set('toJSON', { virtuals: true });
 
 const Product = mongoose.model("Product", productSchema);
 module.exports = Product;
