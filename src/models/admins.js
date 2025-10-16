@@ -38,10 +38,6 @@ const adminSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Vendor",
     }],
-    userAc: [{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-    }],
   },
   {
     timestamps: true,
