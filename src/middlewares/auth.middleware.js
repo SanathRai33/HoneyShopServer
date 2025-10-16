@@ -1,6 +1,6 @@
-const adminModel = require("../models/admins.js");
-const userModel = require("../models/users.js");
-const vendorModel = require("../models/vendors.js");
+const adminModel = require("../models/admins.model.js");
+const userModel = require("../models/users.model.js");
+const vendorModel = require("../models/vendors.model.js");
 const jwt = require("jsonwebtoken");
 
 async function authAdminMiddleware(req, res, next) {
