@@ -10,6 +10,7 @@ const blogSchema = new mongoose.Schema(
 
     slug: {
       type: String,
+        required: true,
       unique: true,
       lowercase: true,
       trim: true,
@@ -44,11 +45,11 @@ const blogSchema = new mongoose.Schema(
 
     author: {
       name: { type: String, required: true },
-      avatar: { type: String }, // Optional image
+      avatar: { type: String },
     },
 
     readTime: {
-      type: Number, // in minutes
+      type: Number,
       default: 3,
     },
 
