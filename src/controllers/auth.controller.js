@@ -103,15 +103,14 @@ async function loginUser(req, res) {
 function logoutUser(req, res) {
   res.clearCookie("userToken");
   res.status(201).json({
-    message: "Logged out successfully",
+    message: "User Logged out successfully",
   });
 }
-
 
 // Admin Auth Controllers
 // 1. Register Admin
 const registerAdmin = async (req, res) => {
-  const { fullName, email, phone, password } = req.body;
+  const { name, email, phone, password } = req.body;
 
   const isAdminExist = await adminModel.findOne({
     $or: [{ email: email }, { phone: phone }],
@@ -126,7 +125,7 @@ const registerAdmin = async (req, res) => {
   const hashPassword = await bcrypt.hash(password, 10);
 
   const admin = await adminModel.create({
-    fullName,
+    name,
     email,
     phone,
     password: hashPassword,
@@ -150,7 +149,7 @@ const registerAdmin = async (req, res) => {
     message: "Admin registered successfully",
     admin: {
       id: admin._id,
-      fullName: admin.fullName,
+      name: admin.name,
       email: admin.email,
       phone: admin.phone,
     },
@@ -159,10 +158,11 @@ const registerAdmin = async (req, res) => {
 
 // 2. Login Admin
 async function loginAdmin(req, res) {
-  const { email, password } = req.body;
+  const { name, email, password } = req.body;
 
   const admin = await adminModel.findOne({
     email,
+    name,
   });
 
   if (!admin) {
@@ -197,7 +197,7 @@ async function loginAdmin(req, res) {
     message: "Admin logged in successfully",
     admin: {
       id: admin._id,
-      fullName: admin.fullName,
+      name: admin.name,
       email: admin.email,
     },
   });
@@ -207,32 +207,38 @@ async function loginAdmin(req, res) {
 function logoutAdmin(req, res) {
   res.clearCookie("adminToken");
   res.status(201).json({
-    message: "Logged out successfully",
+    message: "Admin Logged out successfully",
   });
 }
-
 
 // Vendor Auth Controllers
 // 1. Register Vendor
 const registerVendor = async (req, res) => {
-  const { fullName, email, phone, password } = req.body;
+  const { businessName, businessEmail, businessPhone, ownerName, password } =
+    req.body;
 
   const isVendorExist = await vendorModel.findOne({
-    $or: [{ email: email }, { phone: phone }],
+    $or: [
+      { businessName: businessName },
+      { businessEmail: businessEmail },
+      { businessPhone: businessPhone },
+    ],
   });
 
   if (isVendorExist) {
     return res.status(400).json({
-      message: "Vendor already exists. Try new email or phone...",
+      message:
+        "Vendor already exists. Try new Bussiness name, Bussiness email or Bussiness phone...",
     });
   }
 
   const hashPassword = await bcrypt.hash(password, 10);
 
   const vendor = await vendorModel.create({
-    fullName,
-    email,
-    phone,
+    businessName,
+    businessEmail,
+    businessPhone,
+    ownerName,
     password: hashPassword,
   });
 
@@ -254,20 +260,24 @@ const registerVendor = async (req, res) => {
     message: "Vendor registered successfully",
     vendor: {
       id: vendor._id,
-      fullName: vendor.fullName,
-      email: vendor.email,
-      phone: vendor.phone,
+      businessName: vendor.businessName,
+      businessEmail: vendor.businessEmail,
+      businessPhone: vendor.businessPhone,
     },
   });
 };
 
 // 2. Login Vendor
 async function loginVendor(req, res) {
-  const { email, password } = req.body;
+  
+  if (!req.body) {
+    return res.status(400).json({
+      message: "Request body is missing",
+    });
+  }
+  const { businessEmail, businessName, password } = req.body;
 
-  const vendor = await vendorModel.findOne({
-    email,
-  });
+  const vendor = await vendorModel.findOne({ businessEmail, businessName });
 
   if (!vendor) {
     return res.status(400).json({
@@ -301,8 +311,8 @@ async function loginVendor(req, res) {
     message: "Vendor logged in successfully",
     vendor: {
       id: vendor._id,
-      fullName: vendor.fullName,
-      email: vendor.email,
+      businessEmail: vendor.businessEmail,
+      businessName: vendor.businessName,
     },
   });
 }

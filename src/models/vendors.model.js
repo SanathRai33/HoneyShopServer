@@ -27,15 +27,16 @@ const vendorSchema = new mongoose.Schema(
       required: true,
     },
     businessAddress: {
-      street: { type: String, required: true },
-      city: { type: String, required: true },
-      state: { type: String, required: true },
-      pincode: { type: String, required: true },
+      street: { type: String },
+      city: { type: String },
+      state: { type: String },
+      pincode: { type: String },
       country: { type: String, default: "India" },
     },
     businessType: {
       type: String,
-      enum: ["beekeeper", "distributor", "retailer", "wholesaler"],
+      enum: [ "distributor", "retailer", "wholesaler", "manufacturer", "delivery_partner" ],
+      default: "retailer",
       required: true,
     },
     description: {
