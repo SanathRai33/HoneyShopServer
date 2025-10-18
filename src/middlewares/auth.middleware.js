@@ -21,7 +21,7 @@ async function authAdminMiddleware(req, res, next) {
       return res.status(401).json({ message: "Admin not found" });
     }
 
-    req.Admin = Admin;
+    req.admin = Admin;
 
     next();
   } catch (err) {
@@ -69,7 +69,7 @@ async function authVendorMiddleware(req, res, next) {
 
     const Vendor = await vendorModel.findById(decoded.id);
 
-    req.Vendor = Vendor;
+    req.vendor = Vendor;
 
     next();
   } catch (err) {

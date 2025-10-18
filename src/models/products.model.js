@@ -13,21 +13,29 @@ const productSchema = new mongoose.Schema(
     },
     category: {
       type: String,
-      enum: ["raw_honey", "processed_honey", "honey_comb", "bee_pollen", "royal_jelly", "propolis", "beeswax", "gift_packs"],
+      enum: ["Honey", "Ghee"],
       required: true,
     },
     subCategory: {
       type: String,
-      enum: ["multiflora", "acacia", "eucalyptus", "wild_forest", "mustard", "sidr", "manuka", "organic", "flavored"],
+      enum: [ "manuka", "organic", "flavored", "artifitial", "home-made"],
     },
     images: [{
       type: String,
-      required: true,
+      // required: true,
     }],
     price: {
       current: { type: Number, required: true, min: 0 },
       original: { type: Number, min: 0 },
       discount: { type: Number, default: 0, min: 0, max: 100 },
+    },
+    offer: {
+      offerName: {
+        type: String
+      },
+      offerTime: {
+        type: Date
+      }
     },
     weight: {
       value: { type: Number, required: true },
