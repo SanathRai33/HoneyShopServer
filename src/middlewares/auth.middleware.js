@@ -79,4 +79,4 @@ async function authVendorMiddleware(req, res, next) {
   }
 }
 
-module.exports = { authAdminMiddleware, authUserMiddleware };
+module.exports = { authAdminMiddleware, authUserMiddleware, authVendorMiddleware };

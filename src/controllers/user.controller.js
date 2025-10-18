@@ -1,6 +1,6 @@
 const userModel = require('../models/users.model.js')
 
-async function userProfile(req, res) {
+async function getUserProfile(req, res) {
   try {
     const user = req.user;
 
@@ -24,7 +24,7 @@ async function userProfile(req, res) {
 
 async function updateUserProfile(req, res) {
   try {
-    const { fullName, phone, address } = req.body;
+    const { fullName, email, phone, address } = req.body;
 
     const userId = req.user._id;
 
@@ -34,7 +34,7 @@ async function updateUserProfile(req, res) {
 
     const updatedUser = await userModel.findByIdAndUpdate(
       userId,
-      { fullName, phone, address },
+      { fullName, email, phone, address },
       { new: true, runValidators: true }
     );
 
@@ -44,7 +44,13 @@ async function updateUserProfile(req, res) {
 
     return res.status(200).json({
       message: "Profile updated successfully",
-      user: updatedUser,
+      user: {
+        id: updatedUser._id,
+        fullName: updatedUser.fullName,
+        email: updatedUser.email,
+        phone: updatedUser.phone,
+        address: updatedUser.address
+      },
     });
   } catch (error) {
     return res.status(500).json({ message: "Something went wrong", error });
@@ -52,6 +58,6 @@ async function updateUserProfile(req, res) {
 }
 
 module.exports = {
-  userProfile,
+  getUserProfile,
   updateUserProfile
 };
