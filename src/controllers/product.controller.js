@@ -66,14 +66,10 @@ const createProduct = async (req, res) => {
       vendor: seller._id,
       specifications: {
         purity: specifications.purity || "100%",
-        origin: specifications.origin || "",
         harvestDate: specifications.harvestDate || null,
         expiryDate: specifications.expiryDate
           ? new Date(specifications.expiryDate)
           : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-        organic: specifications.organic || false,
-        vegan: specifications.vegan ?? true,
-        glutenFree: specifications.glutenFree ?? true,
       },
       tags: tags,
       isActive: isActive === "true" || isActive === true,
@@ -97,6 +93,62 @@ const createProduct = async (req, res) => {
         vendor: populatedProduct.vendor,
       },
     });
+  } catch (error) {
+    console.error("Product creation error:", error);
+    return res.status(500).json({
+      error: error,
+      message: "Something went wrong",
+    });
+  }
+};
+
+const updateProduct = async (req, res) => {
+  try {
+    const seller = req.admin || req.vendor;
+    const productId = req.params.id;
+    const { price, offer, quantity, tags, isActive, isFeatured } = req.body;
+
+    if (!seller) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized. Please login and try again.",
+      });
+    }
+
+    if (!productId) {
+      return res.status(404).json({
+        message: "Product not found",
+      });
+    }
+
+    const existingProduct = await productModel.findById(productId);
+
+    if (!existingProduct) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    const updatedProduct = await productModel.findByIdAndUpdate(
+      productId,
+      { price, offer, quantity, tags, isActive, isFeatured },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedProduct) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found or could not be updated",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Product updated successfully!",
+      product: updatedProduct,
+    });
+
   } catch (error) {
     console.error("Product creation error:", error);
     return res.status(500).json({
@@ -173,4 +225,4 @@ const getProductByVendorId = async (req, res) => {
   }
 };
 
-module.exports = { createProduct, getAllProduct, getProductByVendorId };
+module.exports = { createProduct, updateProduct, getAllProduct, getProductByVendorId };

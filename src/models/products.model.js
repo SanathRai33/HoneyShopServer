@@ -53,12 +53,8 @@ const productSchema = new mongoose.Schema(
     },
     specifications: {
       purity: { type: String, enum: ["100%", "95%", "90%", "85%"], default: "100%" },
-      origin: { type: String },
       harvestDate: { type: Date },
       expiryDate: { type: Date, required: true },
-      organic: { type: Boolean, default: false },
-      vegan: { type: Boolean, default: true },
-      glutenFree: { type: Boolean, default: true },
     },
     ratings: {
       average: { type: Number, default: 0, min: 0, max: 5 },
