@@ -76,4 +76,74 @@ const addToWishlist = async (req, res) => {
   }
 };
 
-module.exports = { addToWishlist}
+const removeFromWishlist = async (req, res) => {
+  try {
+    const userId = req.body.id;
+    const { productId } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({
+        message: "Unauthorized. Please Login and Try again...",
+      });
+    }
+
+    if (!productId) {
+      return res.status(400).json({
+        message: "Product ID is required.",
+      });
+    }
+
+    // Find user's wishlist
+    const wishlist = await wishlistModel.findOne({ user: userId });
+
+    if (!wishlist) {
+      return res.status(404).json({
+        message: "Wishlist not found.",
+      });
+    }
+
+    // Find the item in wishlist
+    const itemIndex = wishlist.items.findIndex(
+      item => item.product.toString() === productId
+    );
+
+    if (itemIndex === -1) {
+      return res.status(404).json({
+        message: "Product not found in your wishlist.",
+      });
+    }
+
+    // Remove item from wishlist
+    const removedItem = wishlist.items.splice(itemIndex, 1)[0];
+
+    // If wishlist becomes empty, delete the wishlist document
+    if (wishlist.items.length === 0) {
+      await wishlistModel.findByIdAndDelete(wishlist._id);
+      return res.status(200).json({
+        message: "Product removed from wishlist. Wishlist is now empty.",
+        wishlist: null,
+      });
+    }
+
+    // Save updated wishlist
+    await wishlist.save();
+
+    // Populate remaining items for response
+    await wishlist.populate('items.product', 'name image price stock category');
+
+    return res.status(200).json({
+      message: "Product removed from wishlist successfully",
+      wishlist: wishlist,
+      removedProductId: productId
+    });
+
+  } catch (error) {
+    console.error("Remove from wishlist error:", error);
+    return res.status(500).json({
+      message: "Something went wrong while removing from wishlist",
+      error: error.message,
+    });
+  }
+};
+
+module.exports = { addToWishlist, removeFromWishlist}
