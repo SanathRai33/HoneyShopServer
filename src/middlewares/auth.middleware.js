@@ -79,4 +79,68 @@ async function authVendorMiddleware(req, res, next) {
   }
 }
 
-module.exports = { authAdminMiddleware, authUserMiddleware, authVendorMiddleware };
+async function authSellerMiddleware(req, res, next) {
+  const adminToken = req.cookies.adminToken;
+  const vendorToken = req.cookies.vendorToken;
+
+  if (!adminToken && !vendorToken) {
+    return res.status(401).json({
+      success: false,
+      message: "Authentication required. Please login as admin or vendor.",
+    });
+  }
+
+  try {
+    if (adminToken) {
+      const decoded = jwt.verify(adminToken, process.env.JWT_TOKEN);
+      const admin = await adminModel.findById(decoded.id);
+
+      if (admin) {
+        req.admin = admin;
+        req.seller = admin;
+        req.sellerType = "admin";
+        return next();
+      }
+    }
+
+    if (vendorToken) {
+      const decoded = jwt.verify(vendorToken, process.env.JWT_TOKEN);
+      const vendor = await vendorModel.findById(decoded.id);
+
+      if (vendor) {
+        req.vendor = vendor;
+        req.seller = vendor;
+        req.sellerType = "vendor";
+        return next();
+      }
+    }
+  } catch (err) {
+    console.error("Auth middleware error:", err);
+
+    if (err.name === "TokenExpiredError") {
+      return res.status(401).json({
+        success: false,
+        message: "Token expired. Please login again.",
+      });
+    }
+
+    if (err.name === "JsonWebTokenError") {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid token format.",
+      });
+    }
+
+    return res.status(401).json({
+      success: false,
+      message: "Authentication failed.",
+    });
+  }
+}
+
+module.exports = {
+  authAdminMiddleware,
+  authUserMiddleware,
+  authVendorMiddleware,
+  authSellerMiddleware
+};

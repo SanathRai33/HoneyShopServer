@@ -160,7 +160,7 @@ const updateProduct = async (req, res) => {
 
 const getAllProduct = async (req, res) => {
   try {
-    const adminId = req._id;
+    const adminId = req.admin._id;
 
     const adminExist = await adminModel.findById(adminId);
 

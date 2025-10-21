@@ -1,12 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const { createProduct, getAllProduct, getProductByVendorId, updateProduct } = require('../controllers/product.controller.js')
-const { authAdminMiddleware, authVendorMiddleware } = require('../middlewares/auth.middleware.js')
+const { authAdminMiddleware, authVendorMiddleware, authSellerMiddleware } = require('../middlewares/auth.middleware.js')
 const { uploadProduct } = require('../config/cloudinary.js')
 
-router.post('/admin', authAdminMiddleware, uploadProduct, createProduct)
-router.post('/vendor', authVendorMiddleware, uploadProduct, createProduct)
-router.patch('/:id', authAdminMiddleware, updateProduct )
+router.post('/', authSellerMiddleware, uploadProduct, createProduct)
+router.patch('/:id', authSellerMiddleware, updateProduct )
 router.get('/', authAdminMiddleware, getAllProduct)
 router.get('/:id', authVendorMiddleware, getProductByVendorId)
 
