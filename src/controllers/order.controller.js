@@ -252,4 +252,66 @@ const cancelOrder = async (req, res) => {
   }
 };
 
-module.exports = { createOrder, getOrderByUserId, cancelOrder }
+const getOrderByVendorId = async (req, res) => {
+  try {
+    const vendorId = req.vendor;
+    const { page = 1, limit = 10, status } = req.query;
+
+    if (!vendorId) {
+      return res.status(401).json({
+        message: "Unauthorized. Vendor ID required.",
+      });
+    }
+
+    // Build filter
+    const filter = { seller: vendorId };
+    if (status) filter.status = status;
+
+    // Calculate pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    // Execute query
+    const orders = await orderModel.find(filter)
+      .populate('user', 'name email phone')
+      .populate('items.product', 'name image category')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const totalOrders = await orderModel.countDocuments(filter);
+    const totalPages = Math.ceil(totalOrders / parseInt(limit));
+
+    if (!orders || orders.length === 0) {
+      return res.status(200).json({
+        message: "No orders found",
+        orders: [],
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages: 0,
+          totalOrders: 0
+        }
+      });
+    }
+
+    return res.status(200).json({
+      message: "Orders retrieved successfully",
+      orders: orders,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: totalPages,
+        totalOrders: totalOrders,
+        hasNext: parseInt(page) < totalPages,
+        hasPrev: parseInt(page) > 1
+      }
+    });
+
+  } catch (error) {
+    console.error("Get vendor orders error:", error);
+    return res.status(500).json({
+      message: "Something went wrong while fetching orders",
+      error: error.message,
+    });
+  }
+};
+
+module.exports = { createOrder, getOrderByUserId, cancelOrder, getOrderByVendorId }
