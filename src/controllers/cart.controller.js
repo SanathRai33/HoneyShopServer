@@ -293,5 +293,42 @@ const removeFromCart = async (req, res) => {
   }
 };
 
+const clearCart = async (req, res) => {
+  try {
+    const userId = req.body.id;
 
-module.exports = { getCartItems, addToCart, updateCartQuantity, removeFromCart }
+    if (!userId) {
+      return res.status(401).json({
+        message: "Unauthorized. Please Login and Try again...",
+      });
+    }
+
+    // Find and delete user's cart
+    const result = await cartModel.findOneAndDelete({ user: userId });
+
+    if (!result) {
+      return res.status(404).json({
+        message: "Cart not found or already empty.",
+      });
+    }
+
+    return res.status(200).json({
+      message: "Cart cleared successfully",
+      clearedCart: {
+        totalItems: result.totalItems,
+        totalPrice: result.totalPrice,
+        itemsCount: result.items.length
+      }
+    });
+
+  } catch (error) {
+    console.error("Clear cart error:", error);
+    return res.status(500).json({
+      message: "Something went wrong while clearing cart",
+      error: error.message,
+    });
+  }
+};
+
+
+module.exports = { getCartItems, addToCart, updateCartQuantity, removeFromCart, clearCart }
