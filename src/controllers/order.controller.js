@@ -314,4 +314,112 @@ const getOrderByVendorId = async (req, res) => {
   }
 };
 
-module.exports = { createOrder, getOrderByUserId, cancelOrder, getOrderByVendorId }
+const getAllOrders = async (req, res) => {
+  try {
+    const adminId = req.admin._id;
+
+    if (!adminId) {
+      return res.status(401).json({
+        message: "Unauthorized. Admin access required.",
+      });
+    }
+
+    const {
+      page = 1,
+      limit = 20,
+      status,
+      startDate,
+      endDate,
+      sellerId,
+      userId
+    } = req.query;
+
+    // Build filter
+    const filter = {};
+    if (status) filter.status = status;
+    if (sellerId) filter.seller = sellerId;
+    if (userId) filter.user = userId;
+
+    // Date filter
+    if (startDate || endDate) {
+      filter.createdAt = {};
+      if (startDate) filter.createdAt.$gte = new Date(startDate);
+      if (endDate) filter.createdAt.$lte = new Date(endDate);
+    }
+
+    // Calculate pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    // Execute query
+    const orders = await orderModel.find(filter)
+      .populate('user', 'name email phone')
+      .populate('seller', 'name email phone')
+      .populate('items.product', 'name image category')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const totalOrders = await orderModel.countDocuments(filter);
+    const totalPages = Math.ceil(totalOrders / parseInt(limit));
+
+    // Get order statistics
+    const stats = await orderModel.aggregate([
+      { $match: filter },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: '$finalAmount' },
+          totalOrders: { $sum: 1 },
+          pendingOrders: {
+            $sum: { $cond: [{ $eq: ['$status', 'pending'] }, 1, 0] }
+          },
+          completedOrders: {
+            $sum: { $cond: [{ $eq: ['$status', 'delivered'] }, 1, 0] }
+          }
+        }
+      }
+    ]);
+
+    const statistics = stats[0] || {
+      totalRevenue: 0,
+      totalOrders: 0,
+      pendingOrders: 0,
+      completedOrders: 0
+    };
+
+    if (!orders || orders.length === 0) {
+      return res.status(200).json({
+        message: "No orders found",
+        orders: [],
+        statistics,
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages: 0,
+          totalOrders: 0
+        }
+      });
+    }
+
+    return res.status(200).json({
+      message: "Orders retrieved successfully",
+      orders: orders,
+      statistics,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: totalPages,
+        totalOrders: totalOrders,
+        hasNext: parseInt(page) < totalPages,
+        hasPrev: parseInt(page) > 1
+      }
+    });
+
+  } catch (error) {
+    console.error("Get all orders error:", error);
+    return res.status(500).json({
+      message: "Something went wrong while fetching orders",
+      error: error.message,
+    });
+  }
+};
+
+module.exports = { getAllOrders, createOrder, getOrderByUserId, cancelOrder, getOrderByVendorId }
