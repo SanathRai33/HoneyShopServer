@@ -1,6 +1,50 @@
 const wishlistModel = require('../models/wishlist.model.js')
 const productModel = require('../models/products.model.js')
 
+const getWishlist = async (req, res) => {
+  try {
+    const userId = req.body.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        message: "Unauthorized. Please Login and Try again...",
+      });
+    }
+
+    // Find user's wishlist and populate product details
+    const wishlist = await wishlistModel.findOne({ user: userId })
+      .populate('items.product', 'name image price stock category discount');
+
+    if (!wishlist || wishlist.items.length === 0) {
+      return res.status(200).json({
+        message: "Wishlist is empty",
+        wishlist: {
+          items: [],
+          totalItems: 0
+        }
+      });
+    }
+
+    // Add total items count
+    const wishlistWithCount = {
+      ...wishlist.toObject(),
+      totalItems: wishlist.items.length
+    };
+
+    return res.status(200).json({
+      message: "Wishlist retrieved successfully",
+      wishlist: wishlistWithCount
+    });
+
+  } catch (error) {
+    console.error("Get wishlist error:", error);
+    return res.status(500).json({
+      message: "Something went wrong while fetching wishlist",
+      error: error.message,
+    });
+  }
+};
+
 const addToWishlist = async (req, res) => {
   try {
     const userId = req.body.id;
@@ -146,4 +190,4 @@ const removeFromWishlist = async (req, res) => {
   }
 };
 
-module.exports = { addToWishlist, removeFromWishlist}
+module.exports = { getWishlist, addToWishlist, removeFromWishlist}
