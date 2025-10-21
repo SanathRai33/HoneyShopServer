@@ -91,4 +91,67 @@ const addToCart = async (req, res) => {
   }
 };
 
-module.exports = { addToCart }
+
+const removeFromCart = async (req, res) => {
+  try {
+     const userId = req.body.id;
+    const { productId } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({
+        message: "Unauthorized. Please Login and Try again...",
+      });
+    }
+
+    if (!productId) {
+      return res.status(400).json({
+        message: "Product ID is required.",
+      });
+    }
+
+    const cart = await cartModel.findOne({ user: userId });
+
+    if (!cart) {
+      return res.status(404).json({
+        message: "Cart not found.",
+      });
+    }
+
+        const itemIndex = cart.items.findIndex(
+      item => item.product.toString() === productId
+    );
+
+    if (itemIndex === -1) {
+      return res.status(404).json({
+        message: "Item not found in cart.",
+      });
+    }
+
+    const itemToRemove = cart.items[itemIndex];
+    const itemTotalPrice = itemToRemove.price * itemToRemove.quantity;
+
+    cart.items.splice(itemIndex, 1);
+
+    cart.totalItems = cart.items.reduce((total, item) => total + item.quantity, 0);
+    cart.totalPrice = cart.items.reduce((total, item) => total + (item.price * item.quantity), 0);
+
+    await cart.save();
+
+    await cart.populate('items.product', 'name image price');
+
+    return res.status(200).json({
+      message: "Item removed from cart successfully",
+      cart: cart,
+    });
+
+  } catch (error) {
+    console.error("Add to cart error:", error);
+    return res.status(500).json({
+      message: "Something went wrong while adding to cart",
+      error: error.message,
+    });
+  }
+};
+
+
+module.exports = { addToCart, removeFromCart }
