@@ -1,5 +1,6 @@
 const productModel = require("../models/products.model.js");
-const { cloudinary } = require("../config/cloudinary.js");
+const adminModel = require("../models/admins.model.js");
+const vendorModel = require("../models/vendors.model.js");
 
 const createProduct = async (req, res) => {
   try {
@@ -39,7 +40,6 @@ const createProduct = async (req, res) => {
       isFeatured = false,
     } = req.body;
 
-    // Validate required fields
     if (!name || !description || !category || !price || !weight || !quantity) {
       return res.status(400).json({
         message:
@@ -47,26 +47,10 @@ const createProduct = async (req, res) => {
       });
     }
 
-        const newProducts = await productModel.create({
-      name,
-      description,
-      images,
-      category,
-      subCategory,
-      price,
-      weight,
-      quantity,
-      vendor,
-      specifications,
-      tags,
-      isActive,
-      isFeatured,
-    });
-
     const newProduct = await productModel.create({
       name: name.trim(),
       description: description.trim(),
-      images: [productImage], 
+      images: [productImage],
       category,
       subCategory: subCategory || null,
       price: {
@@ -78,25 +62,24 @@ const createProduct = async (req, res) => {
         value: weight.value,
         unit: weight.unit || "g",
       },
-      quantity: quantity,
+      quantity,
       vendor: seller._id,
       specifications: {
-        purity: specsObj.purity || "100%",
-        origin: specsObj.origin || "",
-        harvestDate: specsObj.harvestDate || null,
-        expiryDate: specsObj.expiryDate
-          ? new Date(specsObj.expiryDate)
+        purity: specifications.purity || "100%",
+        origin: specifications.origin || "",
+        harvestDate: specifications.harvestDate || null,
+        expiryDate: specifications.expiryDate
+          ? new Date(specifications.expiryDate)
           : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-        organic: specsObj.organic || false,
-        vegan: specsObj.vegan ?? true,
-        glutenFree: specsObj.glutenFree ?? true,
+        organic: specifications.organic || false,
+        vegan: specifications.vegan ?? true,
+        glutenFree: specifications.glutenFree ?? true,
       },
-      tags: tagsArray,
+      tags: tags,
       isActive: isActive === "true" || isActive === true,
       isFeatured: isFeatured === "true" || isFeatured === true,
     });
 
-    // Populate vendor details in response
     const populatedProduct = await productModel
       .findById(newProduct._id)
       .populate("vendor", "businessName businessEmail");
@@ -123,4 +106,38 @@ const createProduct = async (req, res) => {
   }
 };
 
-module.exports = { createProduct };
+const getAllProduct = async (req, res) => {
+  try {
+    const adminId = req._id;
+
+    const adminExist = await adminModel.findById(adminId);
+
+    if (!adminExist) {
+      return res.status(200).json({
+        message: "Admin not found, Login and Try again...",
+      });
+    }
+
+    const allProducts = await productModel.find().sort({ timestamp: 1 });
+
+    if (!allProducts) {
+      return res.status(200).json({
+        message: "No products listed yet",
+      });
+    }
+
+    return res.status(200).json({
+      message: "Products got successfully",
+      products: allProducts,
+    });
+  } catch (error) {
+    console.error("Product creation error:", error);
+    return res.status(500).json({
+      error: error,
+      message: "Something went wrong",
+    });
+  }
+};
+
+
+module.exports = { createProduct, getAllProduct };
