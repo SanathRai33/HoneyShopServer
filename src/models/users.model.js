@@ -30,6 +30,17 @@ const userSchema = new mongoose.Schema(
       pincode: { type: String },
       country: { type: String, default: "India" },
       fullAddress: { type: String },
+      location: {
+        type: {
+          type: String,
+          enum: ["Point"], // GeoJSON type
+          default: "Point",
+        },
+        coordinates: {
+          type: [Number], // [longitude, latitude]
+          default: [0, 0],
+        },
+      },
     },
     password: {
       type: String,
