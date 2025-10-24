@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const authRoutes = require('./routes/auth.route.js');
+const adminRouter = require('./routes/admin.route.js')
 const userRoutes = require('./routes/user.route.js')
 const productRouter = require('./routes/product.route.js')
 const cartRouter = require('./routes/cart.route.js')
@@ -23,6 +24,7 @@ app.get("/", (req, res)=>{
 })
 
 app.use("/api/auth", authRoutes);
+app.use('/api/admin', adminRouter);
 app.use("/api/user", userRoutes);
 app.use('/api/product', productRouter);
 app.use('/api/cart', cartRouter);
