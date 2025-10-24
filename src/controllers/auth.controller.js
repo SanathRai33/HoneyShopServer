@@ -28,20 +28,25 @@ const registerUser = async (req, res) => {
     password: hashPassword,
   });
 
-  const userToken = jwt.sign(
+  const userDevashyaShopToken = jwt.sign(
     {
       id: user._id,
     },
     process.env.JWT_TOKEN
   );
 
-  res.cookie("userToken", userToken, {
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "none",
-  });
-
+  // res.cookie("userDevashyaShopToken", userDevashyaShopToken, {
+  //   maxAge: 7 * 24 * 60 * 60 * 1000,
+  //   httpOnly: true,
+  //   secure: process.env.NODE_ENV === "production",
+  //   sameSite: "none",
+  // });
+res.cookie("userDevashyaShopToken", userDevashyaShopToken, {
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+  httpOnly: true,
+  secure: false,
+  sameSite: "lax",
+});
   res.status(201).json({
     message: "User registered successfully",
     user: {
@@ -75,14 +80,14 @@ async function loginUser(req, res) {
     });
   }
 
-  const userToken = jwt.sign(
+  const userDevashyaShopToken = jwt.sign(
     {
       id: user._id,
     },
     process.env.JWT_TOKEN
   );
 
-  res.cookie("userToken", userToken, {
+  res.cookie("userDevashyaShopToken", userDevashyaShopToken, {
     maxAge: 7 * 24 * 60 * 60 * 1000,
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -101,7 +106,7 @@ async function loginUser(req, res) {
 
 // 3. Logout User
 function logoutUser(req, res) {
-  res.clearCookie("userToken");
+  res.clearCookie("userDevashyaShopToken");
   res.status(201).json({
     message: "User Logged out successfully",
   });
@@ -131,14 +136,14 @@ const registerAdmin = async (req, res) => {
     password: hashPassword,
   });
 
-  const adminToken = jwt.sign(
+  const adminDevashyaShopToken = jwt.sign(
     {
       id: admin._id,
     },
     process.env.JWT_TOKEN
   );
 
-  res.cookie("adminToken", adminToken, {
+  res.cookie("adminDevashyaShopToken", adminDevashyaShopToken, {
     maxAge: 7 * 24 * 60 * 60 * 1000,
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -179,14 +184,14 @@ async function loginAdmin(req, res) {
     });
   }
 
-  const adminToken = jwt.sign(
+  const adminDevashyaShopToken = jwt.sign(
     {
       id: admin._id,
     },
     process.env.JWT_TOKEN
   );
 
-  res.cookie("adminToken", adminToken, {
+  res.cookie("adminDevashyaShopToken", adminDevashyaShopToken, {
     maxAge: 7 * 24 * 60 * 60 * 1000,
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -205,7 +210,7 @@ async function loginAdmin(req, res) {
 
 // 3. Logout Admin
 function logoutAdmin(req, res) {
-  res.clearCookie("adminToken");
+  res.clearCookie("adminDevashyaShopToken");
   res.status(201).json({
     message: "Admin Logged out successfully",
   });
@@ -242,14 +247,14 @@ const registerVendor = async (req, res) => {
     password: hashPassword,
   });
 
-  const vendorToken = jwt.sign(
+  const vendorDevashyaShopToken = jwt.sign(
     {
       id: vendor._id,
     },
     process.env.JWT_TOKEN
   );
 
-  res.cookie("vendorToken", vendorToken, {
+  res.cookie("vendorDevashyaShopToken", vendorDevashyaShopToken, {
     maxAge: 7 * 24 * 60 * 60 * 1000,
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -293,14 +298,14 @@ async function loginVendor(req, res) {
     });
   }
 
-  const vendorToken = jwt.sign(
+  const vendorDevashyaShopToken = jwt.sign(
     {
       id: vendor._id,
     },
     process.env.JWT_TOKEN
   );
 
-  res.cookie("vendorToken", vendorToken, {
+  res.cookie("vendorDevashyaShopToken", vendorDevashyaShopToken, {
     maxAge: 7 * 24 * 60 * 60 * 1000,
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -319,7 +324,7 @@ async function loginVendor(req, res) {
 
 // 3. Logout Vendor
 function logoutVendor(req, res) {
-  res.clearCookie("vendorToken");
+  res.clearCookie("vendorDevashyaShopToken");
   res.status(201).json({
     message: "Logged out successfully",
   });
