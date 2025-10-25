@@ -4,16 +4,16 @@ const vendorModel = require("../models/vendors.model.js");
 const jwt = require("jsonwebtoken");
 
 async function authAdminMiddleware(req, res, next) {
-  const adminToken = req.cookies.adminToken;
+  const adminDevashyaShopToken = req.cookies.adminDevashyaShopToken;
 
-  if (!adminToken) {
+  if (!adminDevashyaShopToken) {
     return res.status(401).json({
       message: "Unauthorized Admin Token",
     });
   }
 
   try {
-    const decoded = jwt.verify(adminToken, process.env.JWT_TOKEN);
+    const decoded = jwt.verify(adminDevashyaShopToken, process.env.JWT_TOKEN);
 
     const Admin = await adminModel.findById(decoded.id);
 
@@ -32,16 +32,16 @@ async function authAdminMiddleware(req, res, next) {
 }
 
 async function authUserMiddleware(req, res, next) {
-  const userToken = req.cookies.userToken;
+  const userDevashyaShopToken = req.cookies.userDevashyaShopToken;
 
-  if (!userToken) {
+  if (!userDevashyaShopToken) {
     return res.status(401).json({
       message: "Unauthorized User Token",
     });
   }
 
   try {
-    const decoded = jwt.verify(userToken, process.env.JWT_TOKEN);
+    const decoded = jwt.verify(userDevashyaShopToken, process.env.JWT_TOKEN);
 
     const User = await userModel.findById(decoded.id);
 
@@ -56,16 +56,16 @@ async function authUserMiddleware(req, res, next) {
 }
 
 async function authVendorMiddleware(req, res, next) {
-  const vendorToken = req.cookies.vendorToken;
+  const vendorDevashyaShopToken = req.cookies.vendorDevashyaShopToken;
 
-  if (!vendorToken) {
+  if (!vendorDevashyaShopToken) {
     return res.status(401).json({
       message: "Unauthorized Vendor Token",
     });
   }
 
   try {
-    const decoded = jwt.verify(vendorToken, process.env.JWT_TOKEN);
+    const decoded = jwt.verify(vendorDevashyaShopToken, process.env.JWT_TOKEN);
 
     const Vendor = await vendorModel.findById(decoded.id);
 
@@ -80,10 +80,10 @@ async function authVendorMiddleware(req, res, next) {
 }
 
 async function authSellerMiddleware(req, res, next) {
-  const adminToken = req.cookies.adminToken;
-  const vendorToken = req.cookies.vendorToken;
+  const adminDevashyaShopToken = req.cookies.adminDevashyaShopToken;
+  const vendorDevashyaShopToken = req.cookies.vendorDevashyaShopToken;
 
-  if (!adminToken && !vendorToken) {
+  if (!adminDevashyaShopToken && !vendorDevashyaShopToken) {
     return res.status(401).json({
       success: false,
       message: "Authentication required. Please login as admin or vendor.",
@@ -91,8 +91,8 @@ async function authSellerMiddleware(req, res, next) {
   }
 
   try {
-    if (adminToken) {
-      const decoded = jwt.verify(adminToken, process.env.JWT_TOKEN);
+    if (adminDevashyaShopToken) {
+      const decoded = jwt.verify(adminDevashyaShopToken, process.env.JWT_TOKEN);
       const admin = await adminModel.findById(decoded.id);
 
       if (admin) {
@@ -103,8 +103,8 @@ async function authSellerMiddleware(req, res, next) {
       }
     }
 
-    if (vendorToken) {
-      const decoded = jwt.verify(vendorToken, process.env.JWT_TOKEN);
+    if (vendorDevashyaShopToken) {
+      const decoded = jwt.verify(vendorDevashyaShopToken, process.env.JWT_TOKEN);
       const vendor = await vendorModel.findById(decoded.id);
 
       if (vendor) {

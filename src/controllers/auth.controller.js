@@ -41,12 +41,12 @@ const registerUser = async (req, res) => {
   //   secure: process.env.NODE_ENV === "production",
   //   sameSite: "none",
   // });
-res.cookie("userDevashyaShopToken", userDevashyaShopToken, {
-  maxAge: 7 * 24 * 60 * 60 * 1000,
-  httpOnly: true,
-  secure: false,
-  sameSite: "lax",
-});
+  res.cookie("userDevashyaShopToken", userDevashyaShopToken, {
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    httpOnly: true,
+    secure: false,
+    sameSite: "lax",
+  });
   res.status(201).json({
     message: "User registered successfully",
     user: {
@@ -90,8 +90,8 @@ async function loginUser(req, res) {
   res.cookie("userDevashyaShopToken", userDevashyaShopToken, {
     maxAge: 7 * 24 * 60 * 60 * 1000,
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "none",
+    secure: false,
+    sameSite: "lax",
   });
 
   res.status(201).json({
@@ -274,7 +274,6 @@ const registerVendor = async (req, res) => {
 
 // 2. Login Vendor
 async function loginVendor(req, res) {
-  
   if (!req.body) {
     return res.status(400).json({
       message: "Request body is missing",
