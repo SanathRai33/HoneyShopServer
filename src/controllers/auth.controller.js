@@ -137,8 +137,8 @@ const registerAdmin = async (req, res) => {
     },
     process.env.JWT_TOKEN
   );
-  
-    res.cookie("adminDevashyaShopToken", adminDevashyaShopToken, {
+
+  res.cookie("adminDevashyaShopToken", adminDevashyaShopToken, {
     maxAge: 7 * 24 * 60 * 60 * 1000,
     httpOnly: true,
     secure: false,
@@ -189,8 +189,8 @@ async function loginAdmin(req, res) {
   res.cookie("adminDevashyaShopToken", adminDevashyaShopToken, {
     maxAge: 7 * 24 * 60 * 60 * 1000,
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "none",
+    secure: false,
+    sameSite: "lax",
   });
 
   res.status(201).json({
