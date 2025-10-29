@@ -3,8 +3,11 @@ const adminModel = require("../models/admins.model.js");
 const vendorModel = require("../models/vendors.model.js");
 
 const createProduct = async (req, res) => {
+
+  console.log("Hiii.....................................................")
+
   try {
-    const seller = req.admin || req.vendor;
+    const seller = req.admin;
 
     if (!seller) {
       return res.status(401).json({
@@ -16,7 +19,7 @@ const createProduct = async (req, res) => {
     const imageUrl = req.file ? req.file.path : null;
 
     // If no image uploaded but image URL provided in body
-    const bodyImage = req.body.image || null;
+    const bodyImage = req.body.images || null;
 
     const productImage = imageUrl || bodyImage;
 
