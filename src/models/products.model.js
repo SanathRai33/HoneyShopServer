@@ -18,11 +18,11 @@ const productSchema = new mongoose.Schema(
     },
     subCategory: {
       type: String,
-      enum: [ "manuka", "organic", "flavored", "artifitial", "home-made"],
+      // enum: [ "manuka", "organic", "flavored", "artifitial", "home-made"],
     },
     images: [{
       type: String,
-      required: true,
+      // required: true,
     }],
     price: {
       current: { type: Number, required: true, min: 0 },
@@ -48,8 +48,8 @@ const productSchema = new mongoose.Schema(
     },
     vendor: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Vendor",
-      required: true,
+      // ref: "Vendor",
+      // required: true,
     },
     specifications: {
       purity: { type: String, enum: ["100%", "95%", "90%", "85%"], default: "100%" },

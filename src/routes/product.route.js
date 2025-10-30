@@ -4,13 +4,7 @@ const { createProduct, getProductByVendorId, updateProduct, getAllAdminProduct, 
 const { authAdminMiddleware, authVendorMiddleware, authSellerMiddleware } = require('../middlewares/auth.middleware.js');
 const { uploadProduct } = require('../fileHelper/fileHelper.js');
 
-router.post('/', uploadProduct.single("image"), authAdminMiddleware, createProduct)
-router.get('/test', (req, res)=>{
-    console.log(req)
-    return res.status(200).json({
-        message: req.body
-    })
-})
+router.post('/', authAdminMiddleware, createProduct)
 router.patch('/:id', authSellerMiddleware, updateProduct )
 router.get('/', getAllProducts);
 router.get('/products/filter-options', getProductFilterOptions);

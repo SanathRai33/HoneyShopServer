@@ -2,108 +2,105 @@ const productModel = require("../models/products.model.js");
 const adminModel = require("../models/admins.model.js");
 const vendorModel = require("../models/vendors.model.js");
 
+// const productModel = require("../models/products.model.js");
+// const adminModel = require("../models/admins.model.js");
+// const vendorModel = require("../models/vendors.model.js");
+
 const createProduct = async (req, res) => {
-
-  console.log("Hiii.....................................................")
-
   try {
     const seller = req.admin;
 
     if (!seller) {
       return res.status(401).json({
-        message: "Authentication required! Please login.",
-      });
-    }
-
-    // Get image URL from uploaded file
-    const imageUrl = req.file ? req.file.path : null;
-
-    // If no image uploaded but image URL provided in body
-    const bodyImage = req.body.images || null;
-
-    const productImage = imageUrl || bodyImage;
-
-    if (!productImage) {
-      return res.status(400).json({
-        message: "Product image is required",
+        message: "Admin not found! Login and Try again...",
       });
     }
 
     const {
       name,
       description,
+      images,
       category,
       subCategory,
       price,
       weight,
       quantity,
+      vendor,
       specifications,
       tags,
-      isActive = true,
-      isFeatured = false,
+      isActive,
+      isFeatured,
     } = req.body;
 
-    if (!name || !description || !category || !price || !weight || !quantity) {
+    // Validate required fields
+    if (!name || !description || !category || !price || !quantity || !vendor) {
       return res.status(400).json({
-        message:
-          "Name, description, category, price, weight, and quantity are required fields",
+        message: "Missing required fields: name, description, category, price, quantity, vendor",
+      });
+    }
+
+    // Validate price structure
+    if (!price.current || price.current <= 0) {
+      return res.status(400).json({
+        message: "Current price is required and must be greater than 0",
       });
     }
 
     const newProduct = await productModel.create({
-      name: name.trim(),
-      description: description.trim(),
-      images: [productImage],
+      name,
+      description,
+      images: images || [],
       category,
-      subCategory: subCategory || null,
+      subCategory: subCategory || '',
       price: {
         current: price.current,
-        original: price.original,
-        discount: price.discount || 0,
+        original: price.original || price.current,
+        discount: price.discount || 0
       },
-      weight: {
-        value: weight.value,
-        unit: weight.unit || "g",
-      },
+      weight: weight || { value: 0, unit: 'g' },
       quantity,
-      vendor: seller._id,
-      specifications: {
-        purity: specifications.purity || "100%",
-        harvestDate: specifications.harvestDate || null,
-        expiryDate: specifications.expiryDate
-          ? new Date(specifications.expiryDate)
-          : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+      vendor,
+      specifications: specifications || {
+        purity: "100%",
+        harvestDate: "",
+        expiryDate: ""
       },
-      tags: tags,
-      isActive: isActive === "true" || isActive === true,
-      isFeatured: isFeatured === "true" || isFeatured === true,
+      tags: tags || [],
+      isActive: isActive !== undefined ? isActive : true,
+      isFeatured: isFeatured || false,
     });
 
-    const populatedProduct = await productModel
-      .findById(newProduct._id)
-      .populate("vendor", "businessName businessEmail");
-
     return res.status(201).json({
-      success: true,
-      message: "Product created successfully",
-      product: {
-        id: populatedProduct._id,
-        name: populatedProduct.name,
-        description: populatedProduct.description,
-        image: populatedProduct.images[0],
-        price: populatedProduct.price,
-        category: populatedProduct.category,
-        vendor: populatedProduct.vendor,
-      },
+      message: "Product listed successfully",
+      product: newProduct,
     });
   } catch (error) {
     console.error("Product creation error:", error);
+    
+    // Handle validation errors
+    if (error.name === 'ValidationError') {
+      const errors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        message: "Validation failed",
+        errors: errors
+      });
+    }
+
+    // Handle cast errors (invalid ObjectId)
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        message: "Invalid vendor ID format"
+      });
+    }
+
     return res.status(500).json({
-      error: error,
       message: "Something went wrong",
+      error: error.message,
     });
   }
 };
+
+// ... keep your other controller methods (updateProduct, getAllAdminProduct, etc.)
 
 const updateProduct = async (req, res) => {
   try {
@@ -357,20 +354,24 @@ const getAllProducts = async (req, res) => {
 
 const getProductFilterOptions = async (req, res) => {
   try {
-    const categories = await productModel.distinct('category', { isActive: true });
-    const subCategories = await productModel.distinct('subCategory', { isActive: true });
-    
+    const categories = await productModel.distinct("category", {
+      isActive: true,
+    });
+    const subCategories = await productModel.distinct("subCategory", {
+      isActive: true,
+    });
+
     // Get price range statistics
     const priceStats = await productModel.aggregate([
       { $match: { isActive: true } },
       {
         $group: {
           _id: null,
-          minPrice: { $min: '$price' },
-          maxPrice: { $max: '$price' },
-          avgPrice: { $avg: '$price' }
-        }
-      }
+          minPrice: { $min: "$price" },
+          maxPrice: { $max: "$price" },
+          avgPrice: { $avg: "$price" },
+        },
+      },
     ]);
 
     return res.status(200).json({
@@ -378,15 +379,14 @@ const getProductFilterOptions = async (req, res) => {
       filterOptions: {
         categories,
         subCategories,
-        priceRange: priceStats[0] || { minPrice: 0, maxPrice: 0, avgPrice: 0 }
-      }
+        priceRange: priceStats[0] || { minPrice: 0, maxPrice: 0, avgPrice: 0 },
+      },
     });
-
   } catch (error) {
     console.error("Filter options error:", error);
     return res.status(500).json({
       error: error.message,
-      message: "Something went wrong while fetching filter options"
+      message: "Something went wrong while fetching filter options",
     });
   }
 };
@@ -397,5 +397,5 @@ module.exports = {
   getAllAdminProduct,
   getProductByVendorId,
   getAllProducts,
-  getProductFilterOptions
+  getProductFilterOptions,
 };
