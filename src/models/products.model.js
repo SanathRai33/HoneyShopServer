@@ -49,7 +49,7 @@ const productSchema = new mongoose.Schema(
     vendor: {
       type: mongoose.Schema.Types.ObjectId,
       // ref: "Vendor",
-      // required: true,
+      required: true,
     },
     specifications: {
       purity: { type: String, enum: ["100%", "95%", "90%", "85%"], default: "100%" },

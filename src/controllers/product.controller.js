@@ -2,10 +2,6 @@ const productModel = require("../models/products.model.js");
 const adminModel = require("../models/admins.model.js");
 const vendorModel = require("../models/vendors.model.js");
 
-// const productModel = require("../models/products.model.js");
-// const adminModel = require("../models/admins.model.js");
-// const vendorModel = require("../models/vendors.model.js");
-
 const createProduct = async (req, res) => {
   try {
     const seller = req.admin;
@@ -25,21 +21,18 @@ const createProduct = async (req, res) => {
       price,
       weight,
       quantity,
-      vendor,
       specifications,
       tags,
       isActive,
       isFeatured,
     } = req.body;
 
-    // Validate required fields
-    if (!name || !description || !category || !price || !quantity || !vendor) {
+    if (!name || !description || !category || !price || !quantity) {
       return res.status(400).json({
-        message: "Missing required fields: name, description, category, price, quantity, vendor",
+        message: "Missing required fields: name, description, category, price, quantity",
       });
     }
 
-    // Validate price structure
     if (!price.current || price.current <= 0) {
       return res.status(400).json({
         message: "Current price is required and must be greater than 0",
@@ -59,7 +52,7 @@ const createProduct = async (req, res) => {
       },
       weight: weight || { value: 0, unit: 'g' },
       quantity,
-      vendor,
+      vendor: seller._id,
       specifications: specifications || {
         purity: "100%",
         harvestDate: "",
