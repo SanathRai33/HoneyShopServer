@@ -18,7 +18,7 @@ const productSchema = new mongoose.Schema(
     },
     subCategory: {
       type: String,
-      // enum: [ "manuka", "organic", "flavored", "artifitial", "home-made"],
+      enum: [ "manuka", "organic", "flavored", "artifitial", "home-made", ""],
     },
     images: [{
       type: String,
