@@ -40,11 +40,11 @@ const createProduct = async (req, res) => {
       });
     }
 
-    try {
-      tags = JSON.parse(req.body.tags || '[]');
-    } catch (e) {
-      tags = [];
-    }
+    // try {
+    //   tags = JSON.parse(req.body.tags || '[]');
+    // } catch (e) {
+    //   tags = [];
+    // }
 
     const quantity = parseInt(req.body.quantity);
     
@@ -88,7 +88,7 @@ const createProduct = async (req, res) => {
       quantity,
       vendor: seller._id,
       specifications: JSON.parse(req.body.specifications),
-      tags: Array.isArray(tags) ? tags : [],
+      tags: JSON.parse(req.body.tags),
       isActive,
       isFeatured,
     });
