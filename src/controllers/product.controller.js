@@ -2,7 +2,12 @@ const productModel = require("../models/products.model.js");
 const adminModel = require("../models/admins.model.js");
 const vendorModel = require("../models/vendors.model.js");
 
+// const productModel = require("../models/products.model.js");
+
 const createProduct = async (req, res) => {
+  console.log('📥 req.body:', req.body);
+  console.log('📸 req.files:', req.files);
+
   try {
     const seller = req.admin;
 
@@ -12,55 +17,113 @@ const createProduct = async (req, res) => {
       });
     }
 
-    const {
-      name,
-      description,
-      images,
-      category,
-      subCategory,
-      price,
-      weight,
-      quantity,
-      specifications,
-      tags,
-      isActive,
-      isFeatured,
-    } = req.body;
+    // Get uploaded images from Cloudinary via multer
+    const uploadedImages =
+      req.files && req.files.length > 0
+        ? req.files.map((file) => file.path)
+        : [];
 
-    if (!name || !description || !category || !price || !quantity) {
+    if (uploadedImages.length === 0) {
       return res.status(400).json({
-        message: "Missing required fields: name, description, category, price, quantity",
+        message: "At least one product image is required",
       });
     }
 
+    // ✅ Destructure only simple string fields
+    const {
+      name,
+      description,
+      category,
+      subCategory,
+    } = req.body;
+
+    // ✅ Parse JSON fields with try-catch
+    let price, weight, specifications, tags;
+
+    try {
+      price = JSON.parse(req.body.price);
+    } catch (e) {
+      return res.status(400).json({ 
+        message: 'Invalid price format',
+        error: e.message 
+      });
+    }
+
+    try {
+      weight = JSON.parse(req.body.weight);
+    } catch (e) {
+      weight = { value: 0, unit: "g" };
+    }
+
+    try {
+      specifications = JSON.parse(req.body.specifications);
+    } catch (e) {
+      specifications = {
+        purity: "100%",
+        harvestDate: "",
+        expiryDate: "",
+      };
+    }
+
+    try {
+      tags = JSON.parse(req.body.tags || '[]');
+    } catch (e) {
+      tags = [];
+    }
+
+    // ✅ Convert string to number (NOT JSON.parseInt)
+    const quantity = parseInt(req.body.quantity);
+    
+    // ✅ Convert string booleans
+    const isFeatured = req.body.isFeatured === 'true' || req.body.isFeatured === true;
+    const isActive = req.body.isActive === 'true' || req.body.isActive === true;
+
+    // Validate required fields
+    if (!name || !description || !category) {
+      return res.status(400).json({
+        message: "Missing required fields: name, description, category",
+      });
+    }
+
+    if (isNaN(quantity) || quantity < 0) {
+      return res.status(400).json({
+        message: "Invalid quantity value",
+      });
+    }
+
+    // Validate price
     if (!price.current || price.current <= 0) {
       return res.status(400).json({
         message: "Current price is required and must be greater than 0",
       });
     }
 
+    // Create product in database
     const newProduct = await productModel.create({
       name,
       description,
-      images: images || [],
+      images: uploadedImages,
       category,
-      subCategory: subCategory || '',
+      subCategory: subCategory || "",
       price: {
-        current: price.current,
-        original: price.original || price.current,
-        discount: price.discount || 0
+        current: parseFloat(price.current),
+        original: parseFloat(price.original || price.current),
+        discount: parseFloat(price.discount || 0),
       },
-      weight: weight || { value: 0, unit: 'g' },
+      weight: {
+        value: parseFloat(weight.value),
+        unit: weight.unit || "g",
+      },
       quantity,
       vendor: seller._id,
-      specifications: specifications || {
-        purity: "100%",
-        harvestDate: "",
-        expiryDate: ""
+      specifications: {
+        purity: specifications.purity || "100%",
+        harvestDate: specifications.harvestDate || "",
+        expiryDate: specifications.expiryDate || "",
       },
-      tags: tags || [],
-      isActive: isActive !== undefined ? isActive : true,
-      isFeatured: isFeatured || false,
+      tags: Array.isArray(tags) ? tags : [],
+      isActive,
+      isFeatured,
     });
 
     return res.status(201).json({
@@ -68,32 +131,34 @@ const createProduct = async (req, res) => {
       product: newProduct,
     });
   } catch (error) {
-    console.error("Product creation error:", error);
-    
+    console.error("❌ Product creation error:", error);
+    console.error("📋 Error stack:", error.stack);
+
     // Handle validation errors
-    if (error.name === 'ValidationError') {
-      const errors = Object.values(error.errors).map(err => err.message);
+    if (error.name === "ValidationError") {
+      const errors = Object.values(error.errors).map((err) => err.message);
       return res.status(400).json({
         message: "Validation failed",
-        errors: errors
+        errors: errors,
       });
     }
 
     // Handle cast errors (invalid ObjectId)
-    if (error.name === 'CastError') {
+    if (error.name === "CastError") {
       return res.status(400).json({
-        message: "Invalid vendor ID format"
+        message: `Invalid data format: ${error.message}`,
       });
     }
 
     return res.status(500).json({
       message: "Something went wrong",
       error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 };
 
-// ... keep your other controller methods (updateProduct, getAllAdminProduct, etc.)
+
 
 const updateProduct = async (req, res) => {
   try {
