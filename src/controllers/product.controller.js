@@ -2,12 +2,7 @@ const productModel = require("../models/products.model.js");
 const adminModel = require("../models/admins.model.js");
 const vendorModel = require("../models/vendors.model.js");
 
-// const productModel = require("../models/products.model.js");
-
 const createProduct = async (req, res) => {
-  console.log('📥 req.body:', req.body);
-  console.log('📸 req.files:', req.files);
-
   try {
     const seller = req.admin;
 
@@ -29,16 +24,12 @@ const createProduct = async (req, res) => {
       });
     }
 
-    // ✅ Destructure only simple string fields
     const {
       name,
       description,
       category,
       subCategory,
     } = req.body;
-
-    // ✅ Parse JSON fields with try-catch
-    let price, weight, specifications, tags;
 
     try {
       price = JSON.parse(req.body.price);
@@ -56,22 +47,11 @@ const createProduct = async (req, res) => {
     }
 
     try {
-      specifications = JSON.parse(req.body.specifications);
-    } catch (e) {
-      specifications = {
-        purity: "100%",
-        harvestDate: "",
-        expiryDate: "",
-      };
-    }
-
-    try {
       tags = JSON.parse(req.body.tags || '[]');
     } catch (e) {
       tags = [];
     }
 
-    // ✅ Convert string to number (NOT JSON.parseInt)
     const quantity = parseInt(req.body.quantity);
     
     // ✅ Convert string booleans
@@ -116,11 +96,7 @@ const createProduct = async (req, res) => {
       },
       quantity,
       vendor: seller._id,
-      specifications: {
-        purity: specifications.purity || "100%",
-        harvestDate: specifications.harvestDate || "",
-        expiryDate: specifications.expiryDate || "",
-      },
+      specifications: JSON.parse(req.body.specifications),
       tags: Array.isArray(tags) ? tags : [],
       isActive,
       isFeatured,
