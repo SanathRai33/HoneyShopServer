@@ -41,12 +41,6 @@ const createProduct = async (req, res) => {
     }
 
     try {
-      weight = JSON.parse(req.body.weight);
-    } catch (e) {
-      weight = { value: 0, unit: "g" };
-    }
-
-    try {
       tags = JSON.parse(req.body.tags || '[]');
     } catch (e) {
       tags = [];
@@ -90,10 +84,7 @@ const createProduct = async (req, res) => {
         original: parseFloat(price.original || price.current),
         discount: parseFloat(price.discount || 0),
       },
-      weight: {
-        value: parseFloat(weight.value),
-        unit: weight.unit || "g",
-      },
+      weight: JSON.parse(req.body.weight),
       quantity,
       vendor: seller._id,
       specifications: JSON.parse(req.body.specifications),
