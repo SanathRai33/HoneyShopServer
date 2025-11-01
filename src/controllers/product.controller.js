@@ -24,44 +24,20 @@ const createProduct = async (req, res) => {
       });
     }
 
-    const {
-      name,
-      description,
-      category,
-      subCategory,
-    } = req.body;
+    const { name, description, category, subCategory } = req.body;
 
     try {
       price = JSON.parse(req.body.price);
     } catch (e) {
-      return res.status(400).json({ 
-        message: 'Invalid price format',
-        error: e.message 
+      return res.status(400).json({
+        message: "Invalid price format",
+        error: e.message,
       });
     }
 
-    // try {
-    //   tags = JSON.parse(req.body.tags || '[]');
-    // } catch (e) {
-    //   tags = [];
-    // }
-
-    const quantity = parseInt(req.body.quantity);
-    
-    // ✅ Convert string booleans
-    const isFeatured = req.body.isFeatured === 'true' || req.body.isFeatured === true;
-    const isActive = req.body.isActive === 'true' || req.body.isActive === true;
-
-    // Validate required fields
     if (!name || !description || !category) {
       return res.status(400).json({
         message: "Missing required fields: name, description, category",
-      });
-    }
-
-    if (isNaN(quantity) || quantity < 0) {
-      return res.status(400).json({
-        message: "Invalid quantity value",
       });
     }
 
@@ -72,7 +48,6 @@ const createProduct = async (req, res) => {
       });
     }
 
-    // Create product in database
     const newProduct = await productModel.create({
       name,
       description,
@@ -85,12 +60,12 @@ const createProduct = async (req, res) => {
         discount: parseFloat(price.discount || 0),
       },
       weight: JSON.parse(req.body.weight),
-      quantity,
+      quantity: parseInt(req.body.quantity),
       vendor: seller._id,
       specifications: JSON.parse(req.body.specifications),
       tags: JSON.parse(req.body.tags),
-      isActive,
-      isFeatured,
+      isActive: req.body.isActive,
+      isFeatured: req.body.isFeatured,
     });
 
     return res.status(201).json({
@@ -120,12 +95,10 @@ const createProduct = async (req, res) => {
     return res.status(500).json({
       message: "Something went wrong",
       error: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
     });
   }
 };
-
-
 
 const updateProduct = async (req, res) => {
   try {
