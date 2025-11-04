@@ -47,7 +47,7 @@ const getWishlist = async (req, res) => {
 
 const addToWishlist = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user;
     const { productId } = req.body;
 
     if (!userId) {
@@ -75,24 +75,33 @@ const addToWishlist = async (req, res) => {
     let wishlist = await wishlistModel.findOne({ user: userId });
 
     if (wishlist) {
-      const existingItem = wishlist.items.find(
+      const existingItemIndex = wishlist.items.findIndex(
         (item) => item.product.toString() === productId
       );
 
-      if (existingItem) {
-        return res.status(400).json({
-          success: false,
-          message: "Product is already in your wishlist.",
+      if (existingItemIndex > -1) {
+        // Product exists - REMOVE it
+        wishlist.items.splice(existingItemIndex, 1);
+        await wishlist.save();
+        
+        await wishlist.populate("items.product", "name images price quantity category");
+
+        return res.status(200).json({
+          success: true,
+          message: "Product removed from wishlist",
+          wishlist: wishlist,
+          action: "removed"
         });
+      } else {
+        // Product doesn't exist - ADD it
+        wishlist.items.push({
+          product: productId,
+          addedAt: Date.now(),
+        });
+        await wishlist.save();
       }
-
-      wishlist.items.push({
-        product: productId,
-        addedAt: Date.now(),
-      });
-
-      await wishlist.save();
     } else {
+      // Create new wishlist with product
       wishlist = await wishlistModel.create({
         user: userId,
         items: [
@@ -110,6 +119,7 @@ const addToWishlist = async (req, res) => {
       success: true,
       message: "Product added to wishlist successfully",
       wishlist: wishlist,
+      action: "added"
     });
   } catch (error) {
     console.error("Add to wishlist error:", error);
@@ -120,6 +130,7 @@ const addToWishlist = async (req, res) => {
     });
   }
 };
+
 
 const removeFromWishlist = async (req, res) => {
   try {
