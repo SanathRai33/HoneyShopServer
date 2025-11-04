@@ -223,32 +223,27 @@ const getProductByVendorId = async (req, res) => {
   }
 };
 
-const getAllProducts = async( req, res) =>{
-  
-  // const user = req.user;
+const getAllProducts = async (req, res) => {
+  try {
+    const products = await productModel.find();
 
-  // const userExist = await userModel.find(user)
+    if (products.length == 0) {
+      return res.status(404).json({
+        message: "No product found",
+      });
+    }
 
-  // if(userExist){
-  //   return res.status(404).json({
-  //     message: "User not found. Please Login and Try again..."
-  //   })
-  // }
-
-  const products = await productModel.find();
-
-  if(products.length == 0){
+    return res.status(200).json({
+      message: "Product fetched successfully",
+      products,
+    });
+  } catch (error) {
     return res.status(404).json({
-      message: "No product found"
-    })
+      message: "Something went wrong",
+      error: error,
+    });
   }
-
-  return res.status(200).json({
-    message: 'Product fetched successfully',
-    products
-  })
-
-}
+};
 
 const getAllFilteredProducts = async (req, res) => {
   try {
