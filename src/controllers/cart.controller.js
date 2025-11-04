@@ -3,21 +3,22 @@ const productModel = require("../models/products.model.js");
 
 const getCartItems = async (req, res) => {
   try {
-    const userId = req.body.id;
+    const userId = req.user._id;
 
     if (!userId) {
       return res.status(401).json({
+        success: false,
         message: "Unauthorized. Please Login and Try again...",
       });
     }
 
-    // Find user's cart and populate product details
     const cart = await cartModel
       .findOne({ user: userId })
-      .populate("items.product", "name image price stock category");
+      .populate("items.product", "name images price quantity category subCategory");
 
     if (!cart || cart.items.length === 0) {
       return res.status(200).json({
+        success: true,
         message: "Cart is empty",
         cart: {
           items: [],
@@ -28,6 +29,7 @@ const getCartItems = async (req, res) => {
     }
 
     return res.status(200).json({
+      success: true,
       message: "Cart items retrieved successfully",
       cart: {
         _id: cart._id,
@@ -40,6 +42,7 @@ const getCartItems = async (req, res) => {
   } catch (error) {
     console.error("Get cart items error:", error);
     return res.status(500).json({
+      success: false,
       message: "Something went wrong while fetching cart items",
       error: error.message,
     });
