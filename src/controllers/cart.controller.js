@@ -143,7 +143,7 @@ const addToCart = async (req, res) => {
 
 const updateCartQuantity = async (req, res) => {
   try {
-    const userId = req.body.id;
+    const userId = req.user._id;
     const { productId, newQuantity } = req.body;
 
     if (!userId) {
@@ -238,7 +238,7 @@ const updateCartQuantity = async (req, res) => {
 
 const removeFromCart = async (req, res) => {
   try {
-    const userId = req.body.id;
+    const userId = req.user._id;
     const { productId } = req.body;
 
     if (!userId) {
@@ -304,7 +304,7 @@ const removeFromCart = async (req, res) => {
 
 const clearCart = async (req, res) => {
   try {
-    const userId = req.body.id;
+    const userId = req.user._id;
 
     if (!userId) {
       return res.status(401).json({
