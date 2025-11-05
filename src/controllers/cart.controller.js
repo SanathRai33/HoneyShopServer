@@ -149,18 +149,21 @@ const updateCartQuantity = async (req, res) => {
     if (!userId) {
       return res.status(401).json({
         message: "Unauthorized. Please Login and Try again...",
+        success: false,
       });
     }
 
     if (!productId || newQuantity === undefined || newQuantity === null) {
       return res.status(400).json({
         message: "Product ID and new quantity are required.",
+        success: false,
       });
     }
 
     if (newQuantity < 0) {
       return res.status(400).json({
         message: "Quantity cannot be negative.",
+        success: false,
       });
     }
 
@@ -175,6 +178,7 @@ const updateCartQuantity = async (req, res) => {
     if (!cart) {
       return res.status(404).json({
         message: "Cart not found.",
+        success: false,
       });
     }
 
@@ -186,6 +190,7 @@ const updateCartQuantity = async (req, res) => {
     if (itemIndex === -1) {
       return res.status(404).json({
         message: "Item not found in cart.",
+        success: false,
       });
     }
 
@@ -195,6 +200,7 @@ const updateCartQuantity = async (req, res) => {
       return res.status(400).json({
         message: `Only ${product.stock} items available in stock.`,
         availableStock: product.stock,
+        success: false,
       });
     }
 
@@ -226,12 +232,14 @@ const updateCartQuantity = async (req, res) => {
         oldQuantity: oldQuantity,
         newQuantity: newQuantity,
       },
+      success: true,
     });
   } catch (error) {
     console.error("Update cart quantity error:", error);
     return res.status(500).json({
       message: "Something went wrong while updating cart quantity",
       error: error.message,
+      success: false,
     });
   }
 };
@@ -244,12 +252,14 @@ const removeFromCart = async (req, res) => {
     if (!userId) {
       return res.status(401).json({
         message: "Unauthorized. Please Login and Try again...",
+        success: false,
       });
     }
 
     if (!productId) {
       return res.status(400).json({
         message: "Product ID is required.",
+        success: false,
       });
     }
 
@@ -258,6 +268,7 @@ const removeFromCart = async (req, res) => {
     if (!cart) {
       return res.status(404).json({
         message: "Cart not found.",
+        success: false,
       });
     }
 
@@ -268,6 +279,7 @@ const removeFromCart = async (req, res) => {
     if (itemIndex === -1) {
       return res.status(404).json({
         message: "Item not found in cart.",
+        success: false,
       });
     }
 
@@ -292,12 +304,18 @@ const removeFromCart = async (req, res) => {
     return res.status(200).json({
       message: "Item removed from cart successfully",
       cart: cart,
+      removedItem: {
+        product: itemToRemove.product,
+        quantity: itemToRemove.quantity,
+      },
+      success: true,
     });
   } catch (error) {
     console.error("Add to cart error:", error);
     return res.status(500).json({
       message: "Something went wrong while adding to cart",
       error: error.message,
+      success: false,
     });
   }
 };
