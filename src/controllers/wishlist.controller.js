@@ -3,21 +3,25 @@ const productModel = require("../models/products.model.js");
 
 const getWishlist = async (req, res) => {
   try {
-    const userId = req.body.id;
+    const userId = req.user._id;
 
     if (!userId) {
       return res.status(401).json({
+        success: false,
         message: "Unauthorized. Please Login and Try again...",
       });
     }
 
-    // Find user's wishlist and populate product details
     const wishlist = await wishlistModel
       .findOne({ user: userId })
-      .populate("items.product", "name image price stock category discount");
+      .populate(
+        "items.product",
+        "name images price quantity category subCategory"
+      );
 
     if (!wishlist || wishlist.items.length === 0) {
       return res.status(200).json({
+        success: true,
         message: "Wishlist is empty",
         wishlist: {
           items: [],
@@ -26,19 +30,20 @@ const getWishlist = async (req, res) => {
       });
     }
 
-    // Add total items count
     const wishlistWithCount = {
       ...wishlist.toObject(),
       totalItems: wishlist.items.length,
     };
 
     return res.status(200).json({
+      success: true,
       message: "Wishlist retrieved successfully",
       wishlist: wishlistWithCount,
     });
   } catch (error) {
     console.error("Get wishlist error:", error);
     return res.status(500).json({
+      success: false,
       message: "Something went wrong while fetching wishlist",
       error: error.message,
     });
@@ -83,14 +88,17 @@ const addToWishlist = async (req, res) => {
         // Product exists - REMOVE it
         wishlist.items.splice(existingItemIndex, 1);
         await wishlist.save();
-        
-        await wishlist.populate("items.product", "name images price quantity category");
+
+        await wishlist.populate(
+          "items.product",
+          "name images price quantity category"
+        );
 
         return res.status(200).json({
           success: true,
           message: "Product removed from wishlist",
           wishlist: wishlist,
-          action: "removed"
+          action: "removed",
         });
       } else {
         // Product doesn't exist - ADD it
@@ -113,13 +121,16 @@ const addToWishlist = async (req, res) => {
       });
     }
 
-    await wishlist.populate("items.product", "name images price quantity category");
+    await wishlist.populate(
+      "items.product",
+      "name images price quantity category"
+    );
 
     return res.status(201).json({
       success: true,
       message: "Product added to wishlist successfully",
       wishlist: wishlist,
-      action: "added"
+      action: "added",
     });
   } catch (error) {
     console.error("Add to wishlist error:", error);
@@ -130,7 +141,6 @@ const addToWishlist = async (req, res) => {
     });
   }
 };
-
 
 const removeFromWishlist = async (req, res) => {
   try {
@@ -236,4 +246,9 @@ const clearWishlist = async (req, res) => {
   }
 };
 
-module.exports = { getWishlist, addToWishlist, removeFromWishlist, clearWishlist };
+module.exports = {
+  getWishlist,
+  addToWishlist,
+  removeFromWishlist,
+  clearWishlist,
+};
