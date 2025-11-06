@@ -1,5 +1,6 @@
 const cartModel = require("../models/carts.model.js");
 const productModel = require("../models/products.model.js");
+const userModel = require("../models/users.model.js");
 
 const getCartItems = async (req, res) => {
   try {
@@ -11,6 +12,10 @@ const getCartItems = async (req, res) => {
         message: "Unauthorized. Please Login and Try again...",
       });
     }
+
+    const userAddress = await userModel.findById(userId).select("address");
+
+    const pincode = userAddress.address.pincode;
 
     const cart = await cartModel
       .findOne({ user: userId })
@@ -38,6 +43,7 @@ const getCartItems = async (req, res) => {
         totalPrice: cart.totalPrice,
         user: cart.user,
       },
+      pincode: pincode ? pincode : null,
     });
   } catch (error) {
     console.error("Get cart items error:", error);

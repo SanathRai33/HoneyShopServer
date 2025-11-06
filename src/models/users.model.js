@@ -27,17 +27,17 @@ const userSchema = new mongoose.Schema(
       street: { type: String },
       city: { type: String },
       state: { type: String },
-      pincode: { type: String },
+      pincode: { type: String, default: "" },
       country: { type: String, default: "India" },
       fullAddress: { type: String },
       location: {
         type: {
           type: String,
-          enum: ["Point"], // GeoJSON type
+          enum: ["Point"], 
           default: "Point",
         },
         coordinates: {
-          type: [Number], // [longitude, latitude]
+          type: [Number],
           default: [0, 0],
         },
       },
