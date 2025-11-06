@@ -1,4 +1,4 @@
-const userModel = require('../models/users.model.js')
+const userModel = require("../models/users.model.js");
 
 async function getUserProfile(req, res) {
   try {
@@ -49,7 +49,7 @@ async function updateUserProfile(req, res) {
         fullName: updatedUser.fullName,
         email: updatedUser.email,
         phone: updatedUser.phone,
-        address: updatedUser.address
+        address: updatedUser.address,
       },
     });
   } catch (error) {
@@ -57,7 +57,54 @@ async function updateUserProfile(req, res) {
   }
 }
 
+async function deleteUserAccount(req, res) {
+  try {
+    const userId = req.user._id;
+    if (!userId) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    await userModel.findByIdAndDelete(userId);
+    return res
+      .status(200)
+      .json({ message: "User account deleted successfully" });
+  } catch (error) {
+    return res.status(500).json({ message: "Something went wrong", error });
+  }
+}
+
+async function updatedAddress(req, res) {
+  try {
+    const userId = req.user._id;
+    const addressData = req.body;
+
+    const updatedUser = await userModel.findByIdAndUpdate(
+      userId,
+      { address: addressData },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json({
+      message: "Address updated successfully",
+      address: updatedUser.address,
+      success: true,
+    });
+  } catch (error) {
+    console.error("❌ Address Update Error:", error);
+    return res.status(500).json({
+      message: "Something went wrong",
+      error: error.message,
+      success: false,
+    });
+  }
+}
+
 module.exports = {
   getUserProfile,
-  updateUserProfile
+  updateUserProfile,
+  deleteUserAccount,
+  updatedAddress,
 };

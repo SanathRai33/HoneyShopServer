@@ -13,7 +13,7 @@ const getCartItems = async (req, res) => {
       });
     }
 
-    const userAddress = await userModel.findById(userId).select("address");
+    const userAddress = await userModel.findById(userId).select("address -_id");
 
     const pincode = userAddress.address.pincode;
 
@@ -43,7 +43,7 @@ const getCartItems = async (req, res) => {
         totalPrice: cart.totalPrice,
         user: cart.user,
       },
-      pincode: pincode ? pincode : null,
+      address: pincode ? userAddress : null,
     });
   } catch (error) {
     console.error("Get cart items error:", error);
