@@ -181,7 +181,6 @@ const getAllAdminProduct = async (req, res) => {
       products: allProducts,
     });
   } catch (error) {
-    console.error("Product creation error:", error);
     return res.status(500).json({
       error: error,
       message: "Something went wrong",

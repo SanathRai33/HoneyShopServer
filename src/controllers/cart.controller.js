@@ -13,13 +13,16 @@ const getCartItems = async (req, res) => {
       });
     }
 
-    const userAddress = await userModel.findById(userId).select("address -_id");
+    const userAddress = await userModel.findById(userId).select("address");
 
     const pincode = userAddress.address.pincode;
 
     const cart = await cartModel
       .findOne({ user: userId })
-      .populate("items.product", "name images price quantity category subCategory");
+      .populate(
+        "items.product",
+        "name images price quantity category subCategory"
+      );
 
     if (!cart || cart.items.length === 0) {
       return res.status(200).json({
@@ -33,6 +36,11 @@ const getCartItems = async (req, res) => {
       });
     }
 
+    const originalPrice = await cart.items.reduce((sum, item) => {
+      const price = item.product?.price?.original || item.product?.price || 0;
+      return sum + price * item.quantity;
+    }, 0);
+
     return res.status(200).json({
       success: true,
       message: "Cart items retrieved successfully",
@@ -40,6 +48,7 @@ const getCartItems = async (req, res) => {
         _id: cart._id,
         items: cart.items,
         totalItems: cart.totalItems,
+        originalTotal: originalPrice,
         totalPrice: cart.totalPrice,
         user: cart.user,
       },
