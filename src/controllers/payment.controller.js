@@ -1,7 +1,7 @@
 const razorpay = require("../config/razorpay.js");
 const cartModel = require("../models/carts.model.js");
-const productModel = require("../models/products.model.js");
 const userModel = require("../models/users.model.js");
+const paymentModel = require("../models/payment.model");
 
 const getPaymentData = async (req, res) => {
   try {
@@ -109,6 +109,7 @@ const verifyPayment = async (req, res) => {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
       req.body;
+    const userId = req.user._id;
 
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
       return res.status(400).json({
@@ -123,9 +124,54 @@ const verifyPayment = async (req, res) => {
     const generated_signature = hmac.digest("hex");
 
     if (generated_signature === razorpay_signature) {
+      const userCart = await cartModel
+        .findOne({ user: userId })
+        .populate("items.product");
+      const userAddress = await userModel.findById(userId).select("address");
+
+      if (!userCart || userCart.items.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Cart is empty",
+        });
+      }
+
+      const orderResponse = await apiInstance.post("/order/create", {
+        items: userCart.items,
+        totalAmount: userCart.totalPrice,
+        address: userAddress.address,
+        paymentId: razorpay_payment_id,
+        orderId: razorpay_order_id,
+        paymentMethod: "razorpay",
+        paymentStatus: "success",
+      });
+
+      await cartModel.findOneAndUpdate(
+        { user: userId },
+        {
+          items: [],
+          totalItems: 0,
+          totalPrice: 0,
+        }
+      );
+
+      await paymentModel.create({
+        orderId: orderResponse.data.order._id,
+        userId: userId,
+        amount: userCart.totalPrice,
+        currency: "INR",
+        provider: "razorpay",
+        status: "success",
+        providerPaymentId: razorpay_payment_id,
+        providerOrderId: razorpay_order_id,
+        paidAt: new Date(),
+      });
+
       return res.status(200).json({
         success: true,
         message: "Payment verified successfully",
+        order: orderResponse.data.order,
+        paymentId: razorpay_payment_id,
       });
     } else {
       return res.status(400).json({
