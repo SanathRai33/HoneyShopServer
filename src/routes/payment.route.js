@@ -5,6 +5,6 @@ const { authUserMiddleware } = require('../middlewares/auth.middleware');
 
 router.post('/process', paymentProcessor);
 router.get('/data', authUserMiddleware, getPaymentData);
-router.post('/verify', verifyPayment);
+router.post('/verify', authUserMiddleware, verifyPayment);
 
 module.exports = router;

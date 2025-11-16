@@ -4,33 +4,33 @@ const orderSchema = new mongoose.Schema(
   {
     orderId: {
       type: String,
-      required: true,
+      // required: true,
       unique: true,
     },
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      // required: true,
     },
     seller:{
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Vendor",
+      ref: "Admin",
       required: true
     },
     items: [{
       product: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Product",
-        required: true,
+        // required: true,
       },
       quantity: {
         type: Number,
-        required: true,
+        // required: true,
         min: 1,
       },
       price: {
         type: Number,
-        required: true,
+        // required: true,
         min: 0,
       },
       weight: {
@@ -40,7 +40,7 @@ const orderSchema = new mongoose.Schema(
     }],
     totalAmount: {
       type: Number,
-      required: true,
+      // required: true,
       min: 0,
     },
     discount: {
@@ -57,7 +57,7 @@ const orderSchema = new mongoose.Schema(
     },
     finalAmount: {
       type: Number,
-      required: true,
+      // required: true,
     },
     shippingAddress: {
       fullName: { type: String, required: true },
@@ -73,7 +73,7 @@ const orderSchema = new mongoose.Schema(
       method: {
         type: String,
         enum: ["credit_card", "debit_card", "upi", "net_banking", "cod", "wallet"],
-        required: true,
+        // required: true,
       },
       status: {
         type: String,

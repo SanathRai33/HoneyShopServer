@@ -4,7 +4,7 @@ const cartModel = require('../models/carts.model.js')
 
 const createOrder = async (req, res) => {
   try {
-    const userId = req.body.id;
+    const userId = req.body._id;
     const {
       items,
       shippingAddress,
