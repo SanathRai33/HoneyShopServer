@@ -1,10 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const { cancelOrder, getOrderByUserId, getOrderByVendorId, getAllOrders } = require('../controllers/order.controller.js')
+const { cancelOrder, getOrderByUserId, getOrderByVendorId, getAllOrders, getOrderById } = require('../controllers/order.controller.js')
 const { authUserMiddleware, authVendorMiddleware, authAdminMiddleware } = require('../middlewares/auth.middleware.js')
 
-// router.get('/user', authUserMiddleware, getUserOderById);
-router.get('/:id', authUserMiddleware, getOrderByUserId);
+// Get all orders for a user
+router.get('/user/:userId', authUserMiddleware, getOrderByUserId);
+
+// Get single order by order ID
+router.get('/:orderId', authUserMiddleware, getOrderById);
+
 router.post('/cancel', authUserMiddleware, cancelOrder);
 router.get('/vendor', authVendorMiddleware, getOrderByVendorId)
 router.get('/', authAdminMiddleware, getAllOrders)

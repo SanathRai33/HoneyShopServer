@@ -122,17 +122,67 @@ const createOrder = async (req, res) => {
   }
 };
 
-const getOrderByUserId = async (req, res) => {
+const getOrderById = async (req, res) => {
   try {
-    const userId = req.params.id;
+    const { orderId } = req.params;
+    const userId = req.user?._id; // Make sure your auth middleware sets req.user
+
     if (!userId) {
       return res.status(401).json({
         message: "Unauthorized. Please Login and Try again...",
+        success: false,
       });
     }
+
+    const order = await orderModel.findOne({ 
+      $or: [
+        { orderId: orderId },
+        { _id: orderId } // Also allow searching by MongoDB _id
+      ],
+      user: userId 
+    })
+    .populate('user', 'name email phone')
+    // .populate('seller', 'name email phone')
+    .populate('items.product', 'name images category weight seller');
+
+    if (!order) {
+      return res.status(404).json({
+        message: "Order not found",
+        success: false,
+      });
+    }
+
+    return res.status(200).json({
+      message: "Order retrieved successfully",
+      order: order,
+      success: true,
+    });
+
+  } catch (error) {
+    console.error("Get order by ID error:", error);
+    return res.status(500).json({
+      message: "Something went wrong while fetching order",
+      error: error.message,
+      success: false,
+    });
+  }
+};
+
+const getOrderByUserId = async (req, res) => {
+  try {
+    const { userId } = req.params; // Now getting from route parameter
+
+    if (!userId) {
+      return res.status(401).json({
+        message: "User ID is required",
+        success: false,
+      });
+    }
+
     const orders = await orderModel.find({ user: userId })
       .populate('items.product', 'name image category')
       .sort({ createdAt: -1 });
+      
     if (!orders || orders.length === 0) {
       return res.status(200).json({
         message: "No orders found",
@@ -140,6 +190,7 @@ const getOrderByUserId = async (req, res) => {
         success: true,
       });
     } 
+    
     return res.status(200).json({
       message: "Orders retrieved successfully",
       orders: orders,
@@ -455,4 +506,4 @@ const getAllOrders = async (req, res) => {
   }
 };
 
-module.exports = { getAllOrders, getOrderByUserId, createOrder, getOrderByUserId, cancelOrder, getOrderByVendorId }
+module.exports = { getAllOrders, getOrderByUserId, createOrder, cancelOrder, getOrderByVendorId, getOrderById }
