@@ -12,32 +12,30 @@ const orderSchema = new mongoose.Schema(
       ref: "User",
       // required: true,
     },
-    seller:{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Admin",
-      required: true
-    },
-    items: [{
-      product: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Product",
-        // required: true,
+    items: [
+      {
+        product: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Product",
+          // required: true,
+        },
+        quantity: {
+          type: Number,
+          // required: true,
+          min: 1,
+        },
+        price: {
+          type: Number,
+          // required: true,
+          min: 0,
+        },
+        seller: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Admin",
+          required: true,
+        },
       },
-      quantity: {
-        type: Number,
-        // required: true,
-        min: 1,
-      },
-      price: {
-        type: Number,
-        // required: true,
-        min: 0,
-      },
-      weight: {
-        value: { type: Number },
-        unit: { type: String },
-      },
-    }],
+    ],
     totalAmount: {
       type: Number,
       // required: true,
@@ -60,8 +58,6 @@ const orderSchema = new mongoose.Schema(
       // required: true,
     },
     shippingAddress: {
-      fullName: { type: String, required: true },
-      phone: { type: String, required: true },
       street: { type: String, required: true },
       city: { type: String, required: true },
       state: { type: String, required: true },
@@ -72,7 +68,14 @@ const orderSchema = new mongoose.Schema(
     payment: {
       method: {
         type: String,
-        enum: ["credit_card", "debit_card", "upi", "net_banking", "cod", "wallet"],
+        enum: [
+          "credit_card",
+          "debit_card",
+          "upi",
+          "net_banking",
+          "cod",
+          "wallet",
+        ],
         // required: true,
       },
       status: {
@@ -85,7 +88,15 @@ const orderSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["pending", "confirmed", "processing", "shipped", "delivered", "cancelled", "returned"],
+      enum: [
+        "pending",
+        "confirmed",
+        "processing",
+        "shipped",
+        "delivered",
+        "cancelled",
+        "returned",
+      ],
       default: "pending",
     },
     deliveryDate: {

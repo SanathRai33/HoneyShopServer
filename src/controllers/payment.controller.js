@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const razorpay = require("../config/razorpay.js");
 const cartModel = require("../models/carts.model.js");
 const userModel = require("../models/users.model.js");
@@ -108,90 +109,115 @@ const paymentProcessor = async (req, res) => {
 
 const verifyPayment = async (req, res) => {
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
-      req.body;
     const userId = req.user._id;
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
-      return res.status(400).json({
-        success: false,
-        message: "Missing payment verification data",
+    if (!userId) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
+
+    const secretKey = process.env.RAZORPAY_KEY_SECRET;
+    
+    if (!secretKey) {
+      return res.status(500).json({ 
+        message: "Server configuration error",
+        error: "RAZORPAY_KEY_SECRET not configured"
       });
     }
 
-    const crypto = require("crypto");
-    const hmac = crypto.createHmac("sha256", process.env.RAZORPAY_KEY_SECRET);
-    hmac.update(razorpay_order_id + "|" + razorpay_payment_id);
-    const generated_signature = hmac.digest("hex");
+    // Verify Razorpay signature
+    const body = razorpay_order_id + "|" + razorpay_payment_id;
+    const expectedSignature = crypto
+      .createHmac('sha256', secretKey)
+      .update(body)
+      .digest('hex');
 
-    if (generated_signature === razorpay_signature) {
-      const userCart = await cartModel
-        .findOne({ user: userId })
-        .populate("items.product");
-      const userAddress = await userModel.findById(userId).select("address");
+    if (expectedSignature !== razorpay_signature) {
+      return res.status(400).json({ message: "Payment verification failed - signature mismatch" });
+    }
 
-      if (!userCart || userCart.items.length === 0) {
-        return res.status(400).json({
-          success: false,
-          message: "Cart is empty",
-        });
+    // Fetch user cart
+    const userCart = await cartModel
+      .findOne({ user: userId })
+      .populate('items.product', 'name price vendor quantity');
+
+    if (!userCart || userCart.items.length === 0) {
+      return res.status(400).json({ message: "Cart is empty" });
+    }
+
+    // Fetch user data (name, phone, address)
+    const userData = await userModel.findById(userId).select('fullName email phone address');
+    
+    if (!userData || !userData.address) {
+      return res.status(400).json({ message: "Shipping address not found" });
+    }
+
+    // Prepare shipping address with all required fields
+    const shippingAddress = {
+      street: userData.address.street,
+      city: userData.address.city,
+      state: userData.address.state,
+      pincode: userData.address.pincode,
+      country: userData.address.country || 'India',
+      landmark: userData.address.landmark || '',
+    };
+
+    // Create order from cart items
+    const orderId = `ORD${Date.now()}${Math.random().toString(36).substr(2, 5)}`.toUpperCase();
+    
+    const newOrder = await orderModel.create({
+      orderId,
+      user: userId,
+      items: userCart.items.map(item => ({
+        product: item.product._id,
+        quantity: item.quantity,
+        // Extract current price from price object
+        price: item.product.price?.current || item.product.price || 0,
+        seller: item.product.vendor
+      })),
+      shippingAddress,
+      paymentMethod: 'razorpay',
+      paymentStatus: 'success', // use 'success' not 'completed'
+      razorpay_payment_id,
+      razorpay_order_id,
+      totalAmount: userCart.totalPrice,
+      orderStatus: 'confirmed'
+    });
+
+    // Save payment record with all required fields
+    await paymentModel.create({
+      orderId: newOrder._id,
+      userId,
+      amount: userCart.totalPrice,
+      currency: 'INR',
+      provider: 'razorpay',
+      status: 'success', 
+      method: 'card', 
+      providerPaymentId: razorpay_payment_id,
+      providerOrderId: razorpay_order_id,
+      paidAt: new Date(),
+      notes: {
+        orderId: newOrder._id,
+        userId,
       }
+    });
 
-      // ✅ FIX: Create Order First
-      const order = await orderModel.create({
-        user: userId,
-        items: userCart.items.map((item) => ({
-          product: item.product._id,
-          name: item.product.name,
-          quantity: item.quantity,
-          price: item.product.price?.current || item.product.price,
-          image: item.product.images?.[0],
-        })),
-        totalAmount: userCart.totalPrice,
-        address: userAddress.address,
-        paymentId: razorpay_payment_id,
-        razorpayOrderId: razorpay_order_id,
-        paymentMethod: "razorpay",
-        status: "confirmed",
-        orderDate: new Date(),
-      });
+    // Clear user cart after order creation
+    await cartModel.findOneAndUpdate(
+      { user: userId },
+      { items: [], totalPrice: 0, totalItems: 0 }
+    );
 
-      // ✅ FIX: Create Payment with orderId
-      const payment = await paymentModel.create({
-        orderId: order._id, // ✅ Now this exists!
-        userId: userId,
-        amount: userCart.totalPrice,
-        currency: "INR",
-        provider: "razorpay",
-        status: "success",
-        providerPaymentId: razorpay_payment_id,
-        providerOrderId: razorpay_order_id,
-        paidAt: new Date(),
-      });
-
-      // Clear cart
-      await cartModel.findOneAndUpdate(
-        { user: userId },
-        {
-          items: [],
-          totalItems: 0,
-          totalPrice: 0,
-        }
-      );
-
-      return res.status(200).json({
-        success: true,
-        message: "Payment verified successfully",
-        order: order,
-        paymentId: razorpay_payment_id,
-      });
-    }
+    return res.status(200).json({
+      message: "Payment verified and order created successfully",
+      order: newOrder,
+      payment: { razorpay_payment_id, razorpay_order_id }
+    });
   } catch (error) {
     console.error("Payment verification error:", error);
     return res.status(500).json({
-      success: false,
       message: "Payment verification failed",
-      error: error.message,
+      error: error.message
     });
   }
 };
