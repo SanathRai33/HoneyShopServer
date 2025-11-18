@@ -4,7 +4,7 @@ const { cancelOrder, getOrderByUserId, getOrderByVendorId, getAllOrders, getOrde
 const { authUserMiddleware, authVendorMiddleware, authAdminMiddleware } = require('../middlewares/auth.middleware.js')
 
 // Get all orders for a user
-router.get('/user/:userId', authUserMiddleware, getOrderByUserId);
+router.get('/user', authUserMiddleware, getOrderByUserId);
 
 // Get single order by order ID
 router.get('/:orderId', authUserMiddleware, getOrderById);

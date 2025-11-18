@@ -169,8 +169,10 @@ const getOrderById = async (req, res) => {
 };
 
 const getOrderByUserId = async (req, res) => {
+  console.log(req.user._id)
   try {
-    const { userId } = req.params; // Now getting from route parameter
+
+    const userId = req.user._id;
 
     if (!userId) {
       return res.status(401).json({
