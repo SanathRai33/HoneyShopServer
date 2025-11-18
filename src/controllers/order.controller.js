@@ -169,7 +169,6 @@ const getOrderById = async (req, res) => {
 };
 
 const getOrderByUserId = async (req, res) => {
-  console.log(req.user._id)
   try {
 
     const userId = req.user._id;
@@ -182,7 +181,7 @@ const getOrderByUserId = async (req, res) => {
     }
 
     const orders = await orderModel.find({ user: userId })
-      .populate('items.product', 'name image category')
+      .populate('items.product', 'name images category')
       .sort({ createdAt: -1 });
       
     if (!orders || orders.length === 0) {
@@ -207,8 +206,6 @@ const getOrderByUserId = async (req, res) => {
     });
   }
 };
-
-// const getOrderByUserId = async (req, res) => {
 //   try {
 //     const userId = req.body.id;
 //     const { page = 1, limit = 10, status } = req.query;

@@ -5,10 +5,8 @@ const { authUserMiddleware, authVendorMiddleware, authAdminMiddleware } = requir
 
 // Get all orders for a user
 router.get('/user', authUserMiddleware, getOrderByUserId);
-
-// Get single order by order ID
+// Get single order by order ID for user
 router.get('/:orderId', authUserMiddleware, getOrderById);
-
 router.post('/cancel', authUserMiddleware, cancelOrder);
 router.get('/vendor', authVendorMiddleware, getOrderByVendorId)
 router.get('/', authAdminMiddleware, getAllOrders)
