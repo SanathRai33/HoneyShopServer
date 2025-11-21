@@ -206,66 +206,6 @@ const getOrderByUserId = async (req, res) => {
     });
   }
 };
-//   try {
-//     const userId = req.body.id;
-//     const { page = 1, limit = 10, status } = req.query;
-
-//     if (!userId) {
-//       return res.status(401).json({
-//         message: "Unauthorized. Please Login and Try again...",
-//       });
-//     }
-
-//     // Build filter
-//     const filter = { user: userId };
-//     if (status) filter.status = status;
-
-//     // Calculate pagination
-//     const skip = (parseInt(page) - 1) * parseInt(limit);
-
-//     // Execute query
-//     const orders = await orderModel.find(filter)
-//       .populate('seller', 'name email phone')
-//       .populate('items.product', 'name image category')
-//       .sort({ createdAt: -1 })
-//       .skip(skip)
-//       .limit(parseInt(limit));
-
-//     const totalOrders = await orderModel.countDocuments(filter);
-//     const totalPages = Math.ceil(totalOrders / parseInt(limit));
-
-//     if (!orders || orders.length === 0) {
-//       return res.status(200).json({
-//         message: "No orders found",
-//         orders: [],
-//         pagination: {
-//           currentPage: parseInt(page),
-//           totalPages: 0,
-//           totalOrders: 0
-//         }
-//       });
-//     }
-
-//     return res.status(200).json({
-//       message: "Orders retrieved successfully",
-//       orders: orders,
-//       pagination: {
-//         currentPage: parseInt(page),
-//         totalPages: totalPages,
-//         totalOrders: totalOrders,
-//         hasNext: parseInt(page) < totalPages,
-//         hasPrev: parseInt(page) > 1
-//       }
-//     });
-
-//   } catch (error) {
-//     console.error("Get user orders error:", error);
-//     return res.status(500).json({
-//       message: "Something went wrong while fetching orders",
-//       error: error.message,
-//     });
-//   }
-// };
 
 const cancelOrder = async (req, res) => {
   try {
@@ -404,81 +344,38 @@ const getAllOrders = async (req, res) => {
     if (!adminId) {
       return res.status(401).json({
         message: "Unauthorized. Admin access required.",
+        success: false,
       });
     }
 
-    const {
-      page = 1,
-      limit = 20,
-      status,
-      startDate,
-      endDate,
-      sellerId,
-      userId
-    } = req.query;
+    const { page = 1, limit = 20 } = req.query;
 
-    // Build filter
-    const filter = {};
-    if (status) filter.status = status;
-    if (sellerId) filter.seller = sellerId;
-    if (userId) filter.user = userId;
-
-    // Date filter
-    if (startDate || endDate) {
-      filter.createdAt = {};
-      if (startDate) filter.createdAt.$gte = new Date(startDate);
-      if (endDate) filter.createdAt.$lte = new Date(endDate);
-    }
-
-    // Calculate pagination
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    // Execute query
-    const orders = await orderModel.find(filter)
-      .populate('user', 'name email phone')
-      .populate('seller', 'name email phone')
-      .populate('items.product', 'name image category')
+    // Execute query - get all orders without filters
+    const orders = await orderModel.find({})
+      .populate('user', 'fullName email phone')
+      // .populate('seller', 'name email phone')
+      .populate('items.product', 'name images category')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
 
-    const totalOrders = await orderModel.countDocuments(filter);
+    // Get total count for pagination
+    const totalOrders = await orderModel.countDocuments({});
     const totalPages = Math.ceil(totalOrders / parseInt(limit));
-
-    // Get order statistics
-    const stats = await orderModel.aggregate([
-      { $match: filter },
-      {
-        $group: {
-          _id: null,
-          totalRevenue: { $sum: '$finalAmount' },
-          totalOrders: { $sum: 1 },
-          pendingOrders: {
-            $sum: { $cond: [{ $eq: ['$status', 'pending'] }, 1, 0] }
-          },
-          completedOrders: {
-            $sum: { $cond: [{ $eq: ['$status', 'delivered'] }, 1, 0] }
-          }
-        }
-      }
-    ]);
-
-    const statistics = stats[0] || {
-      totalRevenue: 0,
-      totalOrders: 0,
-      pendingOrders: 0,
-      completedOrders: 0
-    };
 
     if (!orders || orders.length === 0) {
       return res.status(200).json({
         message: "No orders found",
         orders: [],
-        statistics,
+        success: true,
         pagination: {
           currentPage: parseInt(page),
           totalPages: 0,
-          totalOrders: 0
+          totalOrders: 0,
+          hasNext: false,
+          hasPrev: false
         }
       });
     }
@@ -486,7 +383,7 @@ const getAllOrders = async (req, res) => {
     return res.status(200).json({
       message: "Orders retrieved successfully",
       orders: orders,
-      statistics,
+      success: true,
       pagination: {
         currentPage: parseInt(page),
         totalPages: totalPages,
@@ -501,6 +398,7 @@ const getAllOrders = async (req, res) => {
     return res.status(500).json({
       message: "Something went wrong while fetching orders",
       error: error.message,
+      success: false,
     });
   }
 };
