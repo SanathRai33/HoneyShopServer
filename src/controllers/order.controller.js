@@ -1,6 +1,7 @@
-const orderModel = require('../models/orders.model.js')
-const productModel = require('../models/products.model.js')
-const cartModel = require('../models/carts.model.js')
+const orderModel = require("../models/orders.model.js");
+const productModel = require("../models/products.model.js");
+const cartModel = require("../models/carts.model.js");
+const adminModel = require("../models/admins.model.js");
 
 const createOrder = async (req, res) => {
   try {
@@ -12,7 +13,7 @@ const createOrder = async (req, res) => {
       discount = 0,
       shippingCharges = 0,
       taxAmount = 0,
-      notes
+      notes,
     } = req.body;
 
     if (!userId) {
@@ -58,7 +59,7 @@ const createOrder = async (req, res) => {
         product: item.product,
         quantity: item.quantity,
         price: product.price,
-        weight: product.weight || { value: 0, unit: 'g' }
+        weight: product.weight || { value: 0, unit: "g" },
       });
     }
 
@@ -66,7 +67,9 @@ const createOrder = async (req, res) => {
     const finalAmount = totalAmount - discount + shippingCharges + taxAmount;
 
     // Generate unique order ID
-    const orderId = `ORD${Date.now()}${Math.random().toString(36).substr(2, 5)}`.toUpperCase();
+    const orderId = `ORD${Date.now()}${Math.random()
+      .toString(36)
+      .substr(2, 5)}`.toUpperCase();
 
     // Get seller ID from first product (assuming single seller per order)
     const firstProduct = await productModel.findById(items[0].product);
@@ -86,32 +89,78 @@ const createOrder = async (req, res) => {
       shippingAddress,
       payment: {
         method: paymentMethod,
-        status: paymentMethod === 'cod' ? 'completed' : 'pending'
+        status: paymentMethod === "cod" ? "completed" : "pending",
       },
       notes,
-      status: 'pending'
+      status: "pending",
     });
 
     // Update product stock
     for (const item of items) {
-      await productModel.findByIdAndUpdate(
-        item.product,
-        { $inc: { stock: -item.quantity } }
-      );
+      await productModel.findByIdAndUpdate(item.product, {
+        $inc: { stock: -item.quantity },
+      });
     }
 
     // Clear user's cart after successful order
     await cartModel.findOneAndDelete({ user: userId });
 
     // Populate order details for response
-    await order.populate('items.product', 'name image');
-    await order.populate('user', 'name email');
-    await order.populate('seller', 'name email');
+    await order.populate("items.product", "name image");
+    await order.populate("user", "name email");
+    await order.populate("seller", "name email");
 
     return res.status(201).json({
       message: "Order created successfully",
       order: order,
     });
+  } catch (error) {
+    console.error("Create order error:", error);
+    return res.status(500).json({
+      message: "Something went wrong while creating order",
+      error: error.message,
+    });
+  }
+};
+
+const updateOrderByAdmin = async (req, res) => {
+  try {
+    const adminId = req.admin._id;
+    const orderId = req.params.orderId;
+    const newStatus = req.body.status;
+
+    const admin = await adminModel.findOne({ _id: adminId });
+
+    if (!admin) {
+      console.log("Unauthorized activity...");
+      return res.status(401).json({
+        message: "Unauthorized activity...",
+        success: false,
+      });
+    }
+
+    const product = await orderModel.findOne({ _id: orderId });
+
+    if (!product) {
+      console.log("Product not found");
+      return res.status(401).json({
+        message: "Product not found",
+        success: false,
+      });
+    }
+
+    if (!newStatus) {
+      return res.status(400).json({
+        message: "Status is required",
+        success: false,
+      });
+    }
+
+    await orderModel.findByIdAndUpdate({ _id: orderId }, { status: newStatus });
+    
+    //  return res.status(200).json({
+    //   message: "Order status updated successfully"
+    // });
 
   } catch (error) {
     console.error("Create order error:", error);
@@ -134,16 +183,17 @@ const getOrderById = async (req, res) => {
       });
     }
 
-    const order = await orderModel.findOne({ 
-      $or: [
-        { orderId: orderId },
-        { _id: orderId } // Also allow searching by MongoDB _id
-      ],
-      user: userId 
-    })
-    .populate('user', 'name email phone')
-    // .populate('seller', 'name email phone')
-    .populate('items.product', 'name images category weight seller');
+    const order = await orderModel
+      .findOne({
+        $or: [
+          { orderId: orderId },
+          { _id: orderId }, // Also allow searching by MongoDB _id
+        ],
+        user: userId,
+      })
+      .populate("user", "name email phone")
+      // .populate('seller', 'name email phone')
+      .populate("items.product", "name images category weight seller");
 
     if (!order) {
       return res.status(404).json({
@@ -157,7 +207,6 @@ const getOrderById = async (req, res) => {
       order: order,
       success: true,
     });
-
   } catch (error) {
     console.error("Get order by ID error:", error);
     return res.status(500).json({
@@ -170,7 +219,6 @@ const getOrderById = async (req, res) => {
 
 const getOrderByUserId = async (req, res) => {
   try {
-
     const userId = req.user._id;
 
     if (!userId) {
@@ -180,18 +228,19 @@ const getOrderByUserId = async (req, res) => {
       });
     }
 
-    const orders = await orderModel.find({ user: userId })
-      .populate('items.product', 'name images category')
+    const orders = await orderModel
+      .find({ user: userId })
+      .populate("items.product", "name images category")
       .sort({ createdAt: -1 });
-      
+
     if (!orders || orders.length === 0) {
       return res.status(200).json({
         message: "No orders found",
         orders: [],
         success: true,
       });
-    } 
-    
+    }
+
     return res.status(200).json({
       message: "Orders retrieved successfully",
       orders: orders,
@@ -225,8 +274,9 @@ const cancelOrder = async (req, res) => {
     }
 
     // Find order
-    const order = await orderModel.findOne({ orderId, user: userId })
-      .populate('items.product');
+    const order = await orderModel
+      .findOne({ orderId, user: userId })
+      .populate("items.product");
 
     if (!order) {
       return res.status(404).json({
@@ -235,7 +285,7 @@ const cancelOrder = async (req, res) => {
     }
 
     // Check if order can be cancelled
-    const nonCancellableStatuses = ['shipped', 'delivered', 'cancelled'];
+    const nonCancellableStatuses = ["shipped", "delivered", "cancelled"];
     if (nonCancellableStatuses.includes(order.status)) {
       return res.status(400).json({
         message: `Order cannot be cancelled. Current status: ${order.status}`,
@@ -243,29 +293,27 @@ const cancelOrder = async (req, res) => {
     }
 
     // Update order status
-    order.status = 'cancelled';
-    order.notes = reason ? `Cancelled: ${reason}` : 'Order cancelled by user';
-    
+    order.status = "cancelled";
+    order.notes = reason ? `Cancelled: ${reason}` : "Order cancelled by user";
+
     // Update payment status if payment was completed
-    if (order.payment.status === 'completed') {
-      order.payment.status = 'refunded';
+    if (order.payment.status === "completed") {
+      order.payment.status = "refunded";
     }
 
     await order.save();
 
     // Restore product stock
     for (const item of order.items) {
-      await productModel.findByIdAndUpdate(
-        item.product._id,
-        { $inc: { stock: item.quantity } }
-      );
+      await productModel.findByIdAndUpdate(item.product._id, {
+        $inc: { stock: item.quantity },
+      });
     }
 
     return res.status(200).json({
       message: "Order cancelled successfully",
       order: order,
     });
-
   } catch (error) {
     console.error("Cancel order error:", error);
     return res.status(500).json({
@@ -294,9 +342,10 @@ const getOrderByVendorId = async (req, res) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     // Execute query
-    const orders = await orderModel.find(filter)
-      .populate('user', 'name email phone')
-      .populate('items.product', 'name image category')
+    const orders = await orderModel
+      .find(filter)
+      .populate("user", "name email phone")
+      .populate("items.product", "name image category")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
@@ -311,8 +360,8 @@ const getOrderByVendorId = async (req, res) => {
         pagination: {
           currentPage: parseInt(page),
           totalPages: 0,
-          totalOrders: 0
-        }
+          totalOrders: 0,
+        },
       });
     }
 
@@ -324,10 +373,9 @@ const getOrderByVendorId = async (req, res) => {
         totalPages: totalPages,
         totalOrders: totalOrders,
         hasNext: parseInt(page) < totalPages,
-        hasPrev: parseInt(page) > 1
-      }
+        hasPrev: parseInt(page) > 1,
+      },
     });
-
   } catch (error) {
     console.error("Get vendor orders error:", error);
     return res.status(500).json({
@@ -353,10 +401,11 @@ const getAllOrders = async (req, res) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     // Execute query - get all orders without filters
-    const orders = await orderModel.find({})
-      .populate('user', 'fullName email phone')
+    const orders = await orderModel
+      .find({})
+      .populate("user", "fullName email phone")
       // .populate('seller', 'name email phone')
-      .populate('items.product', 'name images category')
+      .populate("items.product", "name images category")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
@@ -375,8 +424,8 @@ const getAllOrders = async (req, res) => {
           totalPages: 0,
           totalOrders: 0,
           hasNext: false,
-          hasPrev: false
-        }
+          hasPrev: false,
+        },
       });
     }
 
@@ -389,10 +438,9 @@ const getAllOrders = async (req, res) => {
         totalPages: totalPages,
         totalOrders: totalOrders,
         hasNext: parseInt(page) < totalPages,
-        hasPrev: parseInt(page) > 1
-      }
+        hasPrev: parseInt(page) > 1,
+      },
     });
-
   } catch (error) {
     console.error("Get all orders error:", error);
     return res.status(500).json({
@@ -403,4 +451,12 @@ const getAllOrders = async (req, res) => {
   }
 };
 
-module.exports = { getAllOrders, getOrderByUserId, createOrder, cancelOrder, getOrderByVendorId, getOrderById }
+module.exports = {
+  getAllOrders,
+  updateOrderByAdmin,
+  getOrderByUserId,
+  createOrder,
+  cancelOrder,
+  getOrderByVendorId,
+  getOrderById,
+};
