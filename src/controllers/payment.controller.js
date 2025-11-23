@@ -8,6 +8,7 @@ const orderModel = require("../models/orders.model.js");
 const getPaymentData = async (req, res) => {
   try {
     const userId = req.user._id;
+    const { cartId } = req.params;
 
     if (!userId) {
       return res.status(401).json({
@@ -31,7 +32,7 @@ const getPaymentData = async (req, res) => {
     const userAddress = await userModel.findById(userId).select("address");
 
     const cart = await cartModel
-      .findOne({ user: userId })
+      .findOne({ _id: cartId })
       .populate(
         "items.product",
         "name images price quantity category subCategory"

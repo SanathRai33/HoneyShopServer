@@ -4,7 +4,7 @@ const { paymentProcessor, getPaymentData, verifyPayment } = require('../controll
 const { authUserMiddleware } = require('../middlewares/auth.middleware');
 
 router.post('/process', paymentProcessor);
-router.get('/data', authUserMiddleware, getPaymentData);
+router.get('/data/:cartId', authUserMiddleware, getPaymentData);
 router.post('/verify', authUserMiddleware, verifyPayment);
 
 module.exports = router;
