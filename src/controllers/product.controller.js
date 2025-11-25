@@ -2,6 +2,7 @@ const productModel = require("../models/products.model.js");
 const adminModel = require("../models/admins.model.js");
 const userModel = require("../models/users.model.js");
 const vendorModel = require("../models/vendors.model.js");
+const wishlistModel = require("../models/wishlist.model.js");
 
 const createProduct = async (req, res) => {
   try {
@@ -224,7 +225,21 @@ const getProductByVendorId = async (req, res) => {
 
 const getAllProducts = async (req, res) => {
   try {
+    const userId = req.user._id;
     const products = await productModel.find();
+    
+    const wishlist = await wishlistModel.findOne({ user: userId });
+    
+    const wishlistProductIds = new Set(
+      wishlist?.items?.map(item => item.product?.toString()).filter(Boolean) || []
+    );
+
+    const productsWithWishlistStatus = products.map(product => ({
+      ...product.toObject(),
+      inWishlist: wishlistProductIds.has(product._id.toString())
+    }));
+
+    const wishlistId = Array.from(wishlistProductIds);
 
     if (products.length == 0) {
       return res.status(404).json({
@@ -234,12 +249,14 @@ const getAllProducts = async (req, res) => {
 
     return res.status(200).json({
       message: "Product fetched successfully",
-      products,
+      products: productsWithWishlistStatus,
+      wishlistId
     });
   } catch (error) {
-    return res.status(404).json({
+    console.error("Error in getAllProducts:", error);
+    return res.status(500).json({
       message: "Something went wrong",
-      error: error,
+      error: error.message,
     });
   }
 };
