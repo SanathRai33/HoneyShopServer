@@ -2,6 +2,7 @@ const cartModel = require("../models/carts.model.js");
 const wishlistModel = require("../models/wishlist.model.js");
 const productModel = require("../models/products.model.js");
 const userModel = require("../models/users.model.js");
+const { deliveryPincodes } = require("../data/pincodeData.js")
 
 const getCartItems = async (req, res) => {
   try {
@@ -46,14 +47,13 @@ const getCartItems = async (req, res) => {
       return sum + price * item.quantity;
     }, 0);
 
-    
     const wishlistProductIds = new Set(
-      wishlist.items.map(item => item.product?._id?.toString())
+      wishlist.items.map((item) => item.product?._id?.toString())
     );
 
     const index = cart.items
-      .filter(item => wishlistProductIds.has(item.product?._id?.toString()))
-      .map(item => item.product._id.toString());
+      .filter((item) => wishlistProductIds.has(item.product?._id?.toString()))
+      .map((item) => item.product._id.toString());
 
     return res.status(200).json({
       success: true,
@@ -65,13 +65,13 @@ const getCartItems = async (req, res) => {
         originalTotal: originalPrice,
         totalPrice: cart.totalPrice,
         user: cart.user,
-        index
+        index,
       },
       address: pincode ? userAddress : null,
       wishlist: {
         _id: wishlist._id,
-        userId: wishlist.user
-      }
+        userId: wishlist.user,
+      },
     });
   } catch (error) {
     console.error("Get cart items error:", error);
@@ -390,10 +390,59 @@ const clearCart = async (req, res) => {
   }
 };
 
+const searchAddress = async (req, res) => {
+  try {
+    const { pincode } = req.params;
+
+    if (!pincode) {
+      return res.status(400).json({
+        success: false,
+        message: "Pincode is required",
+      });
+    }
+
+    const cleanPincode = pincode.toString().trim();
+
+    const pincodeData = deliveryPincodes.find(
+      (item) => item.pincode === cleanPincode
+    );
+
+    if (pincodeData) {
+      return res.status(200).json({
+        success: true,
+        message: "Delivery available at this pincode",
+        data: {
+          pincode: cleanPincode,
+          postOffice: pincodeData.postOffice,
+          district: pincodeData.district,
+          state: pincodeData.state,
+          deliverable: true,
+        },
+      });
+    } else {
+      return res.status(404).json({
+        success: false,
+        message: "Delivery not available at this pincode",
+        data: {
+          pincode: cleanPincode,
+          deliverable: false,
+        },
+      });
+    }
+  } catch (error) {
+    console.error("Pincode check error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
 module.exports = {
   getCartItems,
   addToCart,
   updateCartQuantity,
   removeFromCart,
   clearCart,
+  searchAddress,
 };

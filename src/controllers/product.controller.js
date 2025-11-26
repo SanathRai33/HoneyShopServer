@@ -230,15 +230,18 @@ const getAllProducts = async (req, res) => {
     
     const wishlist = await wishlistModel.findOne({ user: userId });
     
+    // Create Set for quick lookup
     const wishlistProductIds = new Set(
       wishlist?.items?.map(item => item.product?.toString()).filter(Boolean) || []
     );
 
+    // Add wishlist status to each product
     const productsWithWishlistStatus = products.map(product => ({
       ...product.toObject(),
       inWishlist: wishlistProductIds.has(product._id.toString())
     }));
 
+    // Get just the wishlist IDs array
     const wishlistId = Array.from(wishlistProductIds);
 
     if (products.length == 0) {
