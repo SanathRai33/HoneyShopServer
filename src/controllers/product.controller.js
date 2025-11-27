@@ -3,6 +3,7 @@ const adminModel = require("../models/admins.model.js");
 const userModel = require("../models/users.model.js");
 const vendorModel = require("../models/vendors.model.js");
 const wishlistModel = require("../models/wishlist.model.js");
+const cartModel = require('../models/carts.model.js')
 
 const createProduct = async (req, res) => {
   try {
@@ -227,22 +228,39 @@ const getAllProducts = async (req, res) => {
   try {
     const userId = req.user._id;
     const products = await productModel.find();
-    
-    const wishlist = await wishlistModel.findOne({ user: userId });
-    
-    // Create Set for quick lookup
+
+    const [wishlist, cart] = await Promise.all([
+      wishlistModel.findOne({ user: userId }),
+      cartModel.findOne({ user: userId }),
+    ]);
+
+    // Create Sets and Maps for quick lookup
     const wishlistProductIds = new Set(
-      wishlist?.items?.map(item => item.product?.toString()).filter(Boolean) || []
+      wishlist?.items
+        ?.map((item) => item.product?.toString())
+        .filter(Boolean) || []
     );
 
-    // Add wishlist status to each product
-    const productsWithWishlistStatus = products.map(product => ({
-      ...product.toObject(),
-      inWishlist: wishlistProductIds.has(product._id.toString())
-    }));
+    const cartItemsMap = new Map(
+      cart?.items
+        ?.map((item) => [item.product?.toString(), item.quantity])
+        .filter(([id]) => id) || []
+    );
 
-    // Get just the wishlist IDs array
+    // Add wishlist and cart status to each product
+    const productsWithStatus = products.map((product) => {
+      const productId = product._id.toString();
+      return {
+        ...product.toObject(),
+        inWishlist: wishlistProductIds.has(productId),
+        inCart: cartItemsMap.has(productId),
+        cartQuantity: cartItemsMap.get(productId) || 0,
+      };
+    });
+
+    // Get arrays of IDs
     const wishlistId = Array.from(wishlistProductIds);
+    const cartId = Array.from(cartItemsMap.keys());
 
     if (products.length == 0) {
       return res.status(404).json({
@@ -252,8 +270,9 @@ const getAllProducts = async (req, res) => {
 
     return res.status(200).json({
       message: "Product fetched successfully",
-      products: productsWithWishlistStatus,
-      wishlistId
+      products: productsWithStatus,
+      wishlistId,
+      cartId,
     });
   } catch (error) {
     console.error("Error in getAllProducts:", error);
