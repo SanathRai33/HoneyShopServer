@@ -283,6 +283,79 @@ const getAllProducts = async (req, res) => {
   }
 };
 
+const getProductById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user._id;
+
+    // Find the product by ID
+    const product = await productModel.findById(id);
+    
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    // Fetch wishlist and cart in parallel
+    const [wishlist, cart] = await Promise.all([
+      wishlistModel.findOne({ user: userId }),
+      cartModel.findOne({ user: userId }),
+    ]);
+
+    // Create Sets and Maps for quick lookup
+    const wishlistProductIds = new Set(
+      wishlist?.items
+        ?.map((item) => item.product?.toString())
+        .filter(Boolean) || []
+    );
+
+    const cartItemsMap = new Map(
+      cart?.items
+        ?.map((item) => [item.product?.toString(), item.quantity])
+        .filter(([id]) => id) || []
+    );
+
+    const productId = product._id.toString();
+
+    // Add wishlist and cart status to the product
+    const productWithStatus = {
+      ...product.toObject(),
+      inWishlist: wishlistProductIds.has(productId),
+      inCart: cartItemsMap.has(productId),
+      cartQuantity: cartItemsMap.get(productId) || 0,
+    };
+
+    // Get arrays of IDs
+    const wishlistId = Array.from(wishlistProductIds);
+    const cartId = Array.from(cartItemsMap.keys());
+
+    return res.status(200).json({
+      success: true,
+      message: "Product fetched successfully",
+      product: productWithStatus,
+      wishlistId,
+      cartId,
+    });
+  } catch (error) {
+    console.error("Error in getProductById:", error);
+    
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid product ID format",
+      });
+    }
+    
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong",
+      error: error.message,
+    });
+  }
+};
+
 const getAllFilteredProducts = async (req, res) => {
   try {
     const {
@@ -453,8 +526,9 @@ const getProductFilterOptions = async (req, res) => {
 module.exports = {
   createProduct,
   updateProduct,
+  getAllProducts,
+  getProductById,
   getAllAdminProduct,
   getProductByVendorId,
-  getAllProducts,
   getProductFilterOptions,
 };
