@@ -1,4 +1,6 @@
 const userModel = require("../models/users.model.js");
+const cartModel = require("../models/carts.model.js");
+const wishlistModel = require("../models/wishlist.model.js");
 
 async function getUserProfile(req, res) {
   try {
@@ -19,6 +21,36 @@ async function getUserProfile(req, res) {
     });
   } catch (error) {
     return res.status(500).json({ message: "Something went wrong", error });
+  }
+}
+
+
+async function getUserCartWish(req, res) {
+  try {
+    const user = req.user;
+
+    if (!user) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    const [cart, wishlist] = await Promise.all([
+      cartModel.findOne({ user: user._id }).populate('items.product'),
+      wishlistModel.findOne({ user: user._id }).populate('items.product')
+    ]);
+
+    const cartCount = cart?.items?.length || 0;
+    const wishlistCount = wishlist?.items?.length || 0;
+
+    return res.status(200).json({
+      counts: {
+        cart: cartCount,
+        wishlist: wishlistCount
+      },
+      message: "User profile fetched successfully",
+    });
+  } catch (error) {
+    console.error("Error in getUserProfile:", error);
+    return res.status(500).json({ message: "Something went wrong", error: error.message });
   }
 }
 
@@ -104,6 +136,7 @@ async function updatedAddress(req, res) {
 
 module.exports = {
   getUserProfile,
+  getUserCartWish,
   updateUserProfile,
   deleteUserAccount,
   updatedAddress,
