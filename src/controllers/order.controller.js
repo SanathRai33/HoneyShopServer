@@ -34,7 +34,6 @@ const createOrder = async (req, res) => {
       });
     }
 
-    // Validate items and calculate totals
     let totalAmount = 0;
     const validatedItems = [];
 
@@ -63,7 +62,6 @@ const createOrder = async (req, res) => {
       });
     }
 
-    // Calculate final amount
     const finalAmount = totalAmount - discount + shippingCharges + taxAmount;
 
     // Generate unique order ID
@@ -75,7 +73,6 @@ const createOrder = async (req, res) => {
     const firstProduct = await productModel.findById(items[0].product);
     const sellerId = firstProduct.vendor || firstProduct.adminId;
 
-    // Create order
     const order = await orderModel.create({
       orderId,
       user: userId,
@@ -89,7 +86,9 @@ const createOrder = async (req, res) => {
       shippingAddress,
       payment: {
         method: paymentMethod,
-        status: paymentMethod === "cod" ? "completed" : "pending",
+        status: paymentMethod === "cod" ? "pending" : "completed",
+        // transactionId: { type: String },
+        paymentDate: Date.now,
       },
       notes,
       status: "pending",
@@ -157,11 +156,10 @@ const updateOrderByAdmin = async (req, res) => {
     }
 
     await orderModel.findByIdAndUpdate({ _id: orderId }, { status: newStatus });
-    
+
     //  return res.status(200).json({
     //   message: "Order status updated successfully"
     // });
-
   } catch (error) {
     console.error("Create order error:", error);
     return res.status(500).json({
@@ -174,7 +172,7 @@ const updateOrderByAdmin = async (req, res) => {
 const getOrderById = async (req, res) => {
   try {
     const { orderId } = req.params;
-    const userId = req.user?._id; // Make sure your auth middleware sets req.user
+    const userId = req.user?._id;
 
     if (!userId) {
       return res.status(401).json({

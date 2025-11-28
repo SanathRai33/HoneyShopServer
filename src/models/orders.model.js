@@ -4,29 +4,29 @@ const orderSchema = new mongoose.Schema(
   {
     orderId: {
       type: String,
-      // required: true,
+      required: true,
       unique: true,
     },
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      // required: true,
+      required: true,
     },
     items: [
       {
         product: {
           type: mongoose.Schema.Types.ObjectId,
           ref: "Product",
-          // required: true,
+          required: true,
         },
         quantity: {
           type: Number,
-          // required: true,
+          required: true,
           min: 1,
         },
         price: {
           type: Number,
-          // required: true,
+          required: true,
           min: 0,
         },
         seller: {
@@ -38,7 +38,7 @@ const orderSchema = new mongoose.Schema(
     ],
     totalAmount: {
       type: Number,
-      // required: true,
+      required: true,
       min: 0,
     },
     discount: {
