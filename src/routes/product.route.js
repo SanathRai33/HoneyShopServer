@@ -9,7 +9,7 @@ router.patch('/:id', authSellerMiddleware, updateProduct )
 router.get('/', authUserMiddleware, getAllProducts);
 router.get('/:id', authUserMiddleware, getProductById)
 router.get('/products/filter-options', getProductFilterOptions);
-router.get('/admin', authAdminMiddleware, getAllAdminProduct)
+router.get('/admin/get', authAdminMiddleware, getAllAdminProduct)
 router.get('/vendor/:id', authVendorMiddleware, getProductByVendorId)
 
 module.exports = router;
