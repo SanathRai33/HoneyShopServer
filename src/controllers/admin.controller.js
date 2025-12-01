@@ -3,28 +3,72 @@ const userModel = require("../models/users.model.js");
 const orderModel = require("../models/orders.model.js");
 const productModel = require("../models/products.model.js");
 
+const getAdminProfile = async (req, res) => {
+  try {
+    const adminId = req.admin._id;
+
+    const admin = await adminModel.findOne({ _id: adminId });
+
+    if (!admin) {
+      return res.status(404).json({
+        message: "No admin found",
+        success: false,
+      });
+    }
+
+    return res.status(200).json({
+      admin: {
+        _id: admin._id,
+        name: admin.name,
+        email: admin.email,
+        phone: admin.phone,
+        isActive: admin.isActive,
+        role: admin.role
+      },
+      message: "Admin found",
+      success: true,
+    });
+  } catch (error) {
+    console.error("Error fetching admin data:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch admin data",
+      error: error.message,
+    });
+  }
+};
+
 const getAllUser = async (req, res) => {
-  const adminId = req.admin;
-  const adminExist = await adminModel.find(adminId);
+  try {
+    const adminId = req.admin;
+    const adminExist = await adminModel.find(adminId);
 
-  if (!adminExist) {
-    return res.status(403).json({
-      message: "Admin authentication need for user list",
+    if (!adminExist) {
+      return res.status(403).json({
+        message: "Admin authentication need for user list",
+      });
+    }
+
+    const allUsers = await userModel.find();
+
+    if (allUsers.length <= 0) {
+      return res.status(404).json({
+        message: "No user login yet",
+      });
+    }
+
+    return res.status(200).json({
+      message: "Successfully fetched users",
+      users: allUsers,
+    });
+  } catch (error) {
+    console.error("Error fetching admin data:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch admin data",
+      error: error.message,
     });
   }
-
-  const allUsers = await userModel.find();
-
-  if (allUsers.length <= 0) {
-    return res.status(404).json({
-      message: "No user login yet",
-    });
-  }
-
-  return res.status(200).json({
-    message: "Successfully fetched users",
-    users: allUsers,
-  });
 };
 
 const getAdminData = async (req, res) => {
@@ -88,7 +132,7 @@ const getAdminData = async (req, res) => {
 
     const trends = {
       revenue: parseFloat(revenueChange),
-      orders: 8.2, 
+      orders: 8.2,
       products: 5.7,
       customers: 15.3,
       pendingOrders: -3.2,
@@ -139,4 +183,4 @@ const getDashboardStats = async (req, res) => {
   }
 };
 
-module.exports = { getAllUser, getAdminData, getDashboardStats };
+module.exports = { getAllUser, getAdminData, getDashboardStats, getAdminProfile };
