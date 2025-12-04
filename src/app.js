@@ -12,6 +12,7 @@ const wishlistRouter = require('./routes/wishlist.route.js');
 const orderRouter = require('./routes/order.route.js');
 const paymentRouter = require('./routes/payment.route.js');
 const contactRouter = require('./routes/contact.route.js');
+const blogRouter = require('./routes/blog.route.js');
 
 const app = express();
 
@@ -30,7 +31,6 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 
-// Logging (dev only)
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
@@ -40,7 +40,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// Root endpoint
 app.get("/", (req, res) => {
   res.json({
     success: true,
@@ -56,7 +55,8 @@ app.get("/", (req, res) => {
       wishlist: "/api/wishlist",
       order: "/api/order",
       payment: "/api/payment",
-      contact: "/api/contact"
+      contact: "/api/contact",
+      blog: "/api/blog"
     }
   });
 });
@@ -71,6 +71,7 @@ app.use('/api/wishlist', wishlistRouter);
 app.use('/api/order', orderRouter);
 app.use('/api/payment', paymentRouter);
 app.use('/api/contact', contactRouter);
+app.use('/api/blog', blogRouter);
 
 // app.use('*', (req, res, next) => {
 //   if (res.headersSent) return next();
