@@ -13,6 +13,7 @@ const orderRouter = require('./routes/order.route.js');
 const paymentRouter = require('./routes/payment.route.js');
 const contactRouter = require('./routes/contact.route.js');
 const blogRouter = require('./routes/blog.route.js');
+const analyticsRouter = require('./routes/analytics.route.js');
 
 const app = express();
 
@@ -56,7 +57,8 @@ app.get("/", (req, res) => {
       order: "/api/order",
       payment: "/api/payment",
       contact: "/api/contact",
-      blog: "/api/blog"
+      blog: "/api/blog",
+      analytics: "/api/analytics"
     }
   });
 });
@@ -72,6 +74,7 @@ app.use('/api/order', orderRouter);
 app.use('/api/payment', paymentRouter);
 app.use('/api/contact', contactRouter);
 app.use('/api/blog', blogRouter);
+app.use('/api/analytics', analyticsRouter);
 
 // app.use('*', (req, res, next) => {
 //   if (res.headersSent) return next();
