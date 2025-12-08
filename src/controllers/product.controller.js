@@ -234,7 +234,6 @@ const getAllProducts = async (req, res) => {
       cartModel.findOne({ user: userId }),
     ]);
 
-    // Create Sets and Maps for quick lookup
     const wishlistProductIds = new Set(
       wishlist?.items
         ?.map((item) => item.product?.toString())
@@ -247,7 +246,6 @@ const getAllProducts = async (req, res) => {
         .filter(([id]) => id) || []
     );
 
-    // Add wishlist and cart status to each product
     const productsWithStatus = products.map((product) => {
       const productId = product._id.toString();
       return {
@@ -258,7 +256,6 @@ const getAllProducts = async (req, res) => {
       };
     });
 
-    // Get arrays of IDs
     const wishlistId = Array.from(wishlistProductIds);
     const cartId = Array.from(cartItemsMap.keys());
 
@@ -274,6 +271,52 @@ const getAllProducts = async (req, res) => {
       wishlistId,
       cartId,
     });
+    
+    // if (!userId) {
+    //   const [wishlist, cart] = await Promise.all([
+    //     wishlistModel.findOne({ user: userId }),
+    //     cartModel.findOne({ user: userId }),
+    //   ]);
+
+    //   const wishlistProductIds = new Set(
+    //     wishlist?.items
+    //       ?.map((item) => item.product?.toString())
+    //       .filter(Boolean) || []
+    //   );
+
+    //   const cartItemsMap = new Map(
+    //     cart?.items
+    //       ?.map((item) => [item.product?.toString(), item.quantity])
+    //       .filter(([id]) => id) || []
+    //   );
+
+    //   const productsWithStatus = products.map((product) => {
+    //     const productId = product._id.toString();
+    //     return {
+    //       ...product.toObject(),
+    //       inWishlist: wishlistProductIds.has(productId),
+    //       inCart: cartItemsMap.has(productId),
+    //       cartQuantity: cartItemsMap.get(productId) || 0,
+    //     };
+    //   });
+
+    //   const wishlistId = Array.from(wishlistProductIds);
+    //   const cartId = Array.from(cartItemsMap.keys());
+
+    //   return res.status(200).json({
+    //     message: "Product fetched successfully",
+    //     products: productsWithStatus,
+    //     wishlistId,
+    //     cartId,
+    //   });
+    // } else {
+    //   return res.status(200).json({
+    //     message: "Product fetched successfully",
+    //     products: products,
+    //     wishlistId: [],
+    //     cartId: [],
+    //   });
+    // }
   } catch (error) {
     console.error("Error in getAllProducts:", error);
     return res.status(500).json({

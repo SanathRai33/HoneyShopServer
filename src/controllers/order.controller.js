@@ -94,14 +94,12 @@ const createOrder = async (req, res) => {
       status: "pending",
     });
 
-    // Update product stock
     for (const item of items) {
       await productModel.findByIdAndUpdate(item.product, {
         $inc: { stock: -item.quantity },
       });
     }
 
-    // Clear user's cart after successful order
     await cartModel.findOneAndDelete({ user: userId });
 
     // Populate order details for response
@@ -256,52 +254,51 @@ const getOrderByUserId = async (req, res) => {
 
 const cancelOrder = async (req, res) => {
   try {
-    const userId = req.body.id;
+    const userId = req.user._id;
     const { orderId, reason } = req.body;
 
     if (!userId) {
       return res.status(401).json({
         message: "Unauthorized. Please Login and Try again...",
+        success: false,
       });
     }
 
     if (!orderId) {
       return res.status(400).json({
         message: "Order ID is required.",
+        success: false,
       });
     }
 
-    // Find order
     const order = await orderModel
-      .findOne({ orderId, user: userId })
+      .findOne({ _id: orderId, user: userId })
       .populate("items.product");
 
     if (!order) {
       return res.status(404).json({
         message: "Order not found.",
+        success: false,
       });
     }
 
-    // Check if order can be cancelled
     const nonCancellableStatuses = ["shipped", "delivered", "cancelled"];
     if (nonCancellableStatuses.includes(order.status)) {
       return res.status(400).json({
         message: `Order cannot be cancelled. Current status: ${order.status}`,
+        success: false,
       });
     }
 
-    // Update order status
     order.status = "cancelled";
     order.notes = reason ? `Cancelled: ${reason}` : "Order cancelled by user";
 
-    // Update payment status if payment was completed
     if (order.payment.status === "completed") {
       order.payment.status = "refunded";
     }
 
     await order.save();
-
-    // Restore product stock
+  
     for (const item of order.items) {
       await productModel.findByIdAndUpdate(item.product._id, {
         $inc: { stock: item.quantity },
@@ -311,12 +308,14 @@ const cancelOrder = async (req, res) => {
     return res.status(200).json({
       message: "Order cancelled successfully",
       order: order,
+      success: true,
     });
   } catch (error) {
     console.error("Cancel order error:", error);
     return res.status(500).json({
       message: "Something went wrong while cancelling order",
       error: error.message,
+      success: false,
     });
   }
 };
