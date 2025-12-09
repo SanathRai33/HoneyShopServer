@@ -14,6 +14,7 @@ const paymentRouter = require('./routes/payment.route.js');
 const contactRouter = require('./routes/contact.route.js');
 const blogRouter = require('./routes/blog.route.js');
 const analyticsRouter = require('./routes/analytics.route.js');
+const reviewRouter = require('./routes/reviews.route.js');
 
 const app = express();
 
@@ -75,6 +76,7 @@ app.use('/api/payment', paymentRouter);
 app.use('/api/contact', contactRouter);
 app.use('/api/blog', blogRouter);
 app.use('/api/analytics', analyticsRouter);
+app.use('/api/reviews', reviewRouter);
 
 // app.use('*', (req, res, next) => {
 //   if (res.headersSent) return next();

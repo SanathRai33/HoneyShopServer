@@ -25,33 +25,20 @@ const reviewSchema = new mongoose.Schema(
     },
     title: {
       type: String,
-      trim: true,
-      maxlength: 100,
+      enum: [ "feedback", "comment", "reply"],
     },
     comment: {
       type: String,
       required: true,
       maxlength: 1000,
     },
+    likeCount: {
+      type: Number,
+      default: 0,
+    },
     images: [{
       type: String,
     }],
-    likes: [{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-    }],
-    dislikes: [{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-    }],
-    isVerifiedPurchase: {
-      type: Boolean,
-      default: false,
-    },
-    isApproved: {
-      type: Boolean,
-      default: true,
-    },
     helpfulCount: {
       type: Number,
       default: 0,
