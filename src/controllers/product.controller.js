@@ -3,7 +3,7 @@ const adminModel = require("../models/admins.model.js");
 const userModel = require("../models/users.model.js");
 const vendorModel = require("../models/vendors.model.js");
 const wishlistModel = require("../models/wishlist.model.js");
-const cartModel = require('../models/carts.model.js')
+const cartModel = require("../models/carts.model.js");
 
 const createProduct = async (req, res) => {
   try {
@@ -271,7 +271,7 @@ const getAllProducts = async (req, res) => {
       wishlistId,
       cartId,
     });
-    
+
     // if (!userId) {
     //   const [wishlist, cart] = await Promise.all([
     //     wishlistModel.findOne({ user: userId }),
@@ -331,9 +331,8 @@ const getProductById = async (req, res) => {
     const { id } = req.params;
     const userId = req.user._id;
 
-    // Find the product by ID
     const product = await productModel.findById(id);
-    
+
     if (!product) {
       return res.status(404).json({
         success: false,
@@ -383,14 +382,14 @@ const getProductById = async (req, res) => {
     });
   } catch (error) {
     console.error("Error in getProductById:", error);
-    
-    if (error.name === 'CastError') {
+
+    if (error.name === "CastError") {
       return res.status(400).json({
         success: false,
         message: "Invalid product ID format",
       });
     }
-    
+
     return res.status(500).json({
       success: false,
       message: "Something went wrong",
@@ -566,6 +565,32 @@ const getProductFilterOptions = async (req, res) => {
   }
 };
 
+const getRelatedProducts = async (req, res) => {
+  try {
+    const { category, limit = 20 } = req.query;
+    let query = {};
+
+    if (category && category !== "all") {
+      query.category = category;
+    }
+
+    const products = await productModel
+      .find(query)
+      .limit(parseInt(limit))
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      products,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch products",
+    });
+  }
+};
+
 module.exports = {
   createProduct,
   updateProduct,
@@ -574,4 +599,5 @@ module.exports = {
   getAllAdminProduct,
   getProductByVendorId,
   getProductFilterOptions,
+  getRelatedProducts,
 };
