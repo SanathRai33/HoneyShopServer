@@ -234,37 +234,76 @@ const getDirectPaymentData = async (req, res) => {
 const verifyPayment = async (req, res) => {
   try {
     const userId = req.user._id;
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, source, productId, quantity, cartId } = req.body;
+    const { 
+      razorpay_order_id, 
+      razorpay_payment_id, 
+      razorpay_signature, 
+      source, 
+      productId, 
+      quantity = 1, 
+      cartId 
+    } = req.body;
+
+    console.log('Verify Payment - User ID:', userId); // ADD LOGGING
+    console.log('Verify Payment - Source:', source);
+    console.log('Verify Payment - Product ID:', productId);
+    console.log('Verify Payment - Quantity:', quantity);
 
     if (!userId) {
-      return res.status(401).json({ message: "User not authenticated" });
+      return res.status(401).json({ 
+        success: false,
+        message: "User not authenticated" 
+      });
     }
 
     const secretKey = process.env.RAZORPAY_KEY_SECRET;
     
     if (!secretKey) {
       return res.status(500).json({ 
+        success: false,
         message: "Server configuration error",
         error: "RAZORPAY_KEY_SECRET not configured"
       });
     }
 
+    // Verify Razorpay signature
     const body = razorpay_order_id + "|" + razorpay_payment_id;
     const expectedSignature = crypto
       .createHmac('sha256', secretKey)
       .update(body)
       .digest('hex');
 
+    console.log('Signature verification:', {
+      expected: expectedSignature.substring(0, 20) + '...',
+      received: razorpay_signature.substring(0, 20) + '...',
+      match: expectedSignature === razorpay_signature
+    });
+
     if (expectedSignature !== razorpay_signature) {
-      return res.status(400).json({ message: "Payment verification failed - signature mismatch" });
+      return res.status(400).json({ 
+        success: false,
+        message: "Payment verification failed - signature mismatch" 
+      });
     }
 
+    // Fetch user data
     const userData = await userModel.findById(userId).select('fullName email phone address');
     
-    if (!userData || !userData.address) {
-      return res.status(400).json({ message: "Shipping address not found" });
+    if (!userData) {
+      return res.status(400).json({ 
+        success: false,
+        message: "User not found" 
+      });
     }
 
+    if (!userData.address) {
+      return res.status(400).json({ 
+        success: false,
+        message: "Shipping address not found. Please add an address first." 
+      });
+    }
+
+    // Prepare shipping address
     const shippingAddress = {
       street: userData.address.street,
       city: userData.address.city,
@@ -275,136 +314,172 @@ const verifyPayment = async (req, res) => {
     };
 
     let newOrder;
-    
-    if (source === 'direct' && productId) {
-      // Direct product purchase
-      const orderData = await prepareDirectOrderData(userId, productId, parseInt(quantity || 1));
+    let itemsForOrder = [];
+    let totalAmount = 0;
+    let orderSource = source || 'cart';
+
+    console.log('Processing order for source:', orderSource);
+
+    if (orderSource === 'direct' && productId) {
+      // DIRECT PRODUCT PURCHASE
+      console.log('Processing direct purchase for product:', productId);
       
-      const itemsForOrder = orderData.cartItems.map(item => ({
-        product: item.product._id,
-        quantity: item.quantity,
-        price: item.price,
-        seller: item.product.vendor
-      }));
-
-      const orderId = `ORD${Date.now()}${Math.random().toString(36).substr(2, 5)}`.toUpperCase();
+      // Fetch product details
+      const product = await productModel.findById(productId).select('name price vendor quantity');
       
-      newOrder = await orderModel.create({
-        orderId,
-        user: userId,
-        items: itemsForOrder,
-        totalAmount: orderData.totals.itemsTotal,
-        finalAmount: orderData.totals.itemsTotal,
-        shippingAddress,
-        payment: {
-          method: 'upi',
-          status: 'completed',
-          transactionId: razorpay_payment_id,
-          paymentDate: new Date()
-        },
-        status: 'confirmed',
-        source: 'direct'
-      });
+      if (!product) {
+        return res.status(400).json({ 
+          success: false,
+          message: "Product not found" 
+        });
+      }
 
-      await paymentModel.create({
-        orderId: newOrder._id,
-        userId,
-        amount: orderData.totals.itemsTotal,
-        currency: 'INR',
-        provider: 'razorpay',
-        status: 'success',
-        method: 'card',
-        providerPaymentId: razorpay_payment_id,
-        providerOrderId: razorpay_order_id,
-        paidAt: new Date(),
-        notes: {
-          orderId: newOrder._id,
-          userId,
-          source: 'direct'
-        }
-      });
+      // Check stock
+      if (product.quantity < parseInt(quantity)) {
+        return res.status(400).json({ 
+          success: false,
+          message: `Only ${product.quantity} units available in stock`,
+          availableStock: product.quantity
+        });
+      }
 
-      // Update product stock
+      const currentPrice = product.price?.current || product.price || 0;
+      totalAmount = currentPrice * parseInt(quantity);
+
+      // Prepare order items
+      itemsForOrder = [{
+        product: product._id,
+        quantity: parseInt(quantity),
+        price: currentPrice,
+        seller: product.vendor || null
+      }];
+
+      // Update product stock (optimistic update - do this before creating order)
       await productModel.findByIdAndUpdate(
         productId,
-        { $inc: { quantity: -parseInt(quantity || 1) } }
+        { $inc: { quantity: -parseInt(quantity) } }
       );
 
+      console.log('Product stock updated');
+
     } else {
-      // Cart-based purchase (existing logic)
+      // CART-BASED PURCHASE (original logic)
+      console.log('Processing cart purchase');
+      
       const userCart = await cartModel
         .findOne({ user: userId })
         .populate('items.product', 'name price vendor quantity');
 
       if (!userCart || userCart.items.length === 0) {
-        return res.status(400).json({ message: "Cart is empty" });
+        return res.status(400).json({ 
+          success: false,
+          message: "Cart is empty" 
+        });
       }
 
-      const itemsForOrder = userCart.items.map(item => ({
+      // Check stock for all cart items
+      for (const item of userCart.items) {
+        if (item.product.quantity < item.quantity) {
+          return res.status(400).json({ 
+            success: false,
+            message: `Only ${item.product.quantity} items available for ${item.product.name}`,
+            productName: item.product.name,
+            availableStock: item.product.quantity
+          });
+        }
+      }
+
+      // Prepare order items from cart
+      itemsForOrder = userCart.items.map(item => ({
         product: item.product._id,
         quantity: item.quantity,
         price: item.product.price?.current || item.product.price || 0,
-        seller: item.product.vendor
+        seller: item.product.vendor || null
       }));
 
-      const orderId = `ORD${Date.now()}${Math.random().toString(36).substr(2, 5)}`.toUpperCase();
-      
-      newOrder = await orderModel.create({
-        orderId,
-        user: userId,
-        items: itemsForOrder,
-        totalAmount: userCart.totalPrice,
-        finalAmount: userCart.totalPrice,
-        shippingAddress,
-        payment: {
-          method: 'upi',
-          status: 'completed',
-          transactionId: razorpay_payment_id,
-          paymentDate: new Date()
-        },
-        status: 'confirmed',
-        source: 'cart'
-      });
+      totalAmount = userCart.totalPrice;
 
-      await paymentModel.create({
-        orderId: newOrder._id,
-        userId,
-        amount: userCart.totalPrice,
-        currency: 'INR',
-        provider: 'razorpay',
-        status: 'success',
-        method: 'card',
-        providerPaymentId: razorpay_payment_id,
-        providerOrderId: razorpay_order_id,
-        paidAt: new Date(),
-        notes: {
-          orderId: newOrder._id,
-          userId,
-          source: 'cart'
-        }
-      });
+      // Update product stocks
+      for (const item of userCart.items) {
+        await productModel.findByIdAndUpdate(
+          item.product._id,
+          { $inc: { quantity: -item.quantity } }
+        );
+      }
 
-      // Clear user cart
+      // Clear cart (only for cart purchases, not direct purchases)
       await cartModel.findOneAndUpdate(
         { user: userId },
         { items: [], totalPrice: 0, totalItems: 0 }
       );
+      
+      console.log('Cart cleared');
     }
 
+    // Create order ID
+    const orderId = `ORD${Date.now()}${Math.random().toString(36).substr(2, 5)}`.toUpperCase();
+    
+    // Create the order
+    newOrder = await orderModel.create({
+      orderId,
+      user: userId,
+      items: itemsForOrder,
+      totalAmount: totalAmount,
+      finalAmount: totalAmount,
+      shippingAddress,
+      payment: {
+        method: 'upi',
+        status: 'completed',
+        transactionId: razorpay_payment_id,
+        paymentDate: new Date(),
+        providerOrderId: razorpay_order_id
+      },
+      status: 'confirmed',
+      source: orderSource
+    });
+
+    console.log('Order created:', newOrder.orderId);
+
+    // Create payment record
+    await paymentModel.create({
+      orderId: newOrder._id,
+      userId,
+      amount: totalAmount,
+      currency: 'INR',
+      provider: 'razorpay',
+      status: 'success',
+      method: 'card',
+      providerPaymentId: razorpay_payment_id,
+      providerOrderId: razorpay_order_id,
+      paidAt: new Date(),
+      notes: {
+        orderId: newOrder._id,
+        userId,
+        source: orderSource,
+        productId: orderSource === 'direct' ? productId : null,
+        quantity: orderSource === 'direct' ? quantity : null
+      }
+    });
+
+    console.log('Payment record created');
+
     return res.status(200).json({
+      success: true,
       message: "Payment verified and order created successfully",
       order: newOrder,
       payment: { 
         razorpay_payment_id, 
         razorpay_order_id,
-        source: source || 'cart'
+        source: orderSource
       }
     });
   } catch (error) {
     console.error("Payment verification error:", error);
     return res.status(500).json({
+      success: false,
       message: "Payment verification failed",
-      error: error.message
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 };
