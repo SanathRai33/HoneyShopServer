@@ -41,7 +41,7 @@ const registerUser = async (req, res) => {
     httpOnly: true,
     secure: isProduction,
     sameSite: isProduction ? "none" : "lax",
-    domain: isProduction ? ".onrender.com" : undefined,
+    domain: isProduction ? "honeyshopserver.onrender.com" : undefined,
   });
 
   res.status(201).json({
@@ -89,7 +89,7 @@ async function loginUser(req, res) {
     httpOnly: true,
     secure: isProduction,
     sameSite: isProduction ? "none" : "lax",
-    domain: isProduction ? ".onrender.com" : undefined,
+    domain: isProduction ? "honeyshopserver.onrender.com" : undefined,
   });
 
   res.status(201).json({
@@ -146,7 +146,7 @@ const registerAdmin = async (req, res) => {
     httpOnly: true,
     secure: isProduction,
     sameSite: isProduction ? "none" : "lax",
-    domain: isProduction ? ".onrender.com" : undefined,
+    domain: isProduction ? "honeyshopserver.onrender.com" : undefined,
   });
 
   res.status(201).json({
@@ -195,7 +195,7 @@ async function loginAdmin(req, res) {
     httpOnly: true,
     secure: isProduction,
     sameSite: isProduction ? "none" : "lax",
-    domain: isProduction ? ".onrender.com" : undefined,
+    domain: isProduction ? "honeyshopserver.onrender.com" : undefined,
   });
 
   res.status(201).json({
@@ -259,7 +259,7 @@ const registerVendor = async (req, res) => {
     httpOnly: true,
     secure: isProduction,
     sameSite: isProduction ? "none" : "lax",
-    domain: isProduction ? ".onrender.com" : undefined,
+    domain: isProduction ? "honeyshopserver.onrender.com" : undefined,
   });
 
   res.status(201).json({
@@ -310,7 +310,7 @@ async function loginVendor(req, res) {
     httpOnly: true,
     secure: isProduction,
     sameSite: isProduction ? "none" : "lax",
-    domain: isProduction ? ".onrender.com" : undefined,
+    domain: isProduction ? "honeyshopserver.onrender.com" : undefined,
   });
 
   res.status(201).json({
