@@ -37,7 +37,7 @@ const registerUser = async (req, res) => {
   );
 
   res.cookie("userDevashyaShopToken", userDevashyaShopToken, {
-    axAge: 7 * 24 * 60 * 60 * 1000,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
     httpOnly: true,
     secure: isProduction,
     sameSite: isProduction ? "none" : "lax",
@@ -85,7 +85,7 @@ async function loginUser(req, res) {
   );
 
   res.cookie("userDevashyaShopToken", userDevashyaShopToken, {
-    axAge: 7 * 24 * 60 * 60 * 1000,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
     httpOnly: true,
     secure: isProduction,
     sameSite: isProduction ? "none" : "lax",
@@ -142,7 +142,7 @@ const registerAdmin = async (req, res) => {
   );
 
   res.cookie("adminDevashyaShopToken", adminDevashyaShopToken, {
-    axAge: 7 * 24 * 60 * 60 * 1000,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
     httpOnly: true,
     secure: isProduction,
     sameSite: isProduction ? "none" : "lax",
@@ -191,7 +191,7 @@ async function loginAdmin(req, res) {
   );
 
   res.cookie("adminDevashyaShopToken", adminDevashyaShopToken, {
-    axAge: 7 * 24 * 60 * 60 * 1000,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
     httpOnly: true,
     secure: isProduction,
     sameSite: isProduction ? "none" : "lax",
@@ -255,7 +255,7 @@ const registerVendor = async (req, res) => {
   );
 
   res.cookie("vendorDevashyaShopToken", vendorDevashyaShopToken, {
-    axAge: 7 * 24 * 60 * 60 * 1000,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
     httpOnly: true,
     secure: isProduction,
     sameSite: isProduction ? "none" : "lax",
@@ -306,7 +306,7 @@ async function loginVendor(req, res) {
   );
 
   res.cookie("vendorDevashyaShopToken", vendorDevashyaShopToken, {
-    axAge: 7 * 24 * 60 * 60 * 1000,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
     httpOnly: true,
     secure: isProduction,
     sameSite: isProduction ? "none" : "lax",
