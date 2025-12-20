@@ -1,3 +1,4 @@
+const isProduction = process.env.NODE_ENV === "production";
 const adminModel = require("../models/admins.model.js");
 const userModel = require("../models/users.model.js");
 const vendorModel = require("../models/vendors.model.js");
@@ -36,10 +37,11 @@ const registerUser = async (req, res) => {
   );
 
   res.cookie("userDevashyaShopToken", userDevashyaShopToken, {
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    axAge: 7 * 24 * 60 * 60 * 1000,
     httpOnly: true,
-    secure: false,
-    sameSite: "lax",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+    domain: isProduction ? ".onrender.com" : undefined,
   });
 
   res.status(201).json({
@@ -83,10 +85,11 @@ async function loginUser(req, res) {
   );
 
   res.cookie("userDevashyaShopToken", userDevashyaShopToken, {
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    axAge: 7 * 24 * 60 * 60 * 1000,
     httpOnly: true,
-    secure: false,
-    sameSite: "lax",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+    domain: isProduction ? ".onrender.com" : undefined,
   });
 
   res.status(201).json({
@@ -139,10 +142,11 @@ const registerAdmin = async (req, res) => {
   );
 
   res.cookie("adminDevashyaShopToken", adminDevashyaShopToken, {
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    axAge: 7 * 24 * 60 * 60 * 1000,
     httpOnly: true,
-    secure: false,
-    sameSite: "lax",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+    domain: isProduction ? ".onrender.com" : undefined,
   });
 
   res.status(201).json({
@@ -187,10 +191,11 @@ async function loginAdmin(req, res) {
   );
 
   res.cookie("adminDevashyaShopToken", adminDevashyaShopToken, {
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    axAge: 7 * 24 * 60 * 60 * 1000,
     httpOnly: true,
-    secure: false,
-    sameSite: "lax",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+    domain: isProduction ? ".onrender.com" : undefined,
   });
 
   res.status(201).json({
@@ -250,10 +255,11 @@ const registerVendor = async (req, res) => {
   );
 
   res.cookie("vendorDevashyaShopToken", vendorDevashyaShopToken, {
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    axAge: 7 * 24 * 60 * 60 * 1000,
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "none",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+    domain: isProduction ? ".onrender.com" : undefined,
   });
 
   res.status(201).json({
@@ -300,10 +306,11 @@ async function loginVendor(req, res) {
   );
 
   res.cookie("vendorDevashyaShopToken", vendorDevashyaShopToken, {
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    axAge: 7 * 24 * 60 * 60 * 1000,
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "none",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+    domain: isProduction ? ".onrender.com" : undefined,
   });
 
   res.status(201).json({
