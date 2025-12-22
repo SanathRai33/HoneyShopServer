@@ -15,9 +15,8 @@ const getCartItems = async (req, res) => {
       });
     }
 
-    const userAddress = await userModel.findById(userId).select("address");
-
-    const pincode = userAddress.address.pincode;
+    const user = await userModel.findById(userId).select("address");
+    const pincode = user?.address?.pincode || null;
 
     const cart = await cartModel
       .findOne({ user: userId })
@@ -39,16 +38,20 @@ const getCartItems = async (req, res) => {
           totalItems: 0,
           totalPrice: 0,
         },
+        address: user?.address || null,
+        wishlist: null,
       });
     }
 
-    const originalPrice = await cart.items.reduce((sum, item) => {
+    const originalPrice = cart.items.reduce((sum, item) => {
       const price = item.product?.price?.original || item.product?.price || 0;
       return sum + price * item.quantity;
     }, 0);
 
+    // FIX: Handle null wishlist
+    const wishlistItems = wishlist?.items || [];
     const wishlistProductIds = new Set(
-      wishlist.items.map((item) => item.product?._id?.toString())
+      wishlistItems.map((item) => item.product?._id?.toString())
     );
 
     const index = cart.items
@@ -67,11 +70,11 @@ const getCartItems = async (req, res) => {
         user: cart.user,
         index,
       },
-      address: pincode ? userAddress : null,
-      wishlist: {
+      address: user?.address || null,
+      wishlist: wishlist ? {
         _id: wishlist._id,
         userId: wishlist.user,
-      },
+      } : null,
     });
   } catch (error) {
     console.error("Get cart items error:", error);
@@ -116,7 +119,6 @@ const addToCart = async (req, res) => {
     let cart = await cartModel.findOne({ user: userId });
 
     if (cart) {
-      // Check if product already exists in cart
       const existingItemIndex = cart.items.findIndex(
         (item) => item.product.toString() === product._id
       );
